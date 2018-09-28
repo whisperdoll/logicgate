@@ -1,0 +1,34 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "typescript",
+            "type": "typescript",
+            "tsconfig": "tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }/*,
+        {
+            "label": "concat",
+            "type": "shell",
+            "command": "copy /b/y \"${workspaceRoot}\\js\\dist\\*.js\" + \"${workspaceRoot}\\js\\*.js\" \"${workspaceRoot}\\js\\dist\\build.js\"",
+            "dependsOn": ["delete", "typescript"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "delete",
+            "type": "shell",
+            "command": "del /Q \"${workspaceRoot}\\js\\dist\\*\""
+        }*/
+    ]
+}
