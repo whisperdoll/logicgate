@@ -1,10 +1,13 @@
-define(["require", "exports", "./canvas", "./utils"], function (require, exports, canvas_1, utils_1) {
+define(["require", "exports", "./canvas", "./utils", "./ionode"], function (require, exports, canvas_1, utils_1, ionode_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Builder = (function () {
         function Builder(parent, width, height) {
             this.gates = [];
             this.mouse = { x: 0, y: 0 };
+            this.inputNodes = [];
+            this.outputNodes = [];
+            this.padding = 32;
             this.parent = parent;
             this.canvas = new canvas_1.Canvas({ width: width, height: height, align: {
                     horizontal: true,
@@ -36,22 +39,53 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             enumerable: true,
             configurable: true
         });
+        Builder.prototype.addInputNode = function (label) {
+            this.inputNodes.push(new GraphicsNode(new ionode_1.IONode(label), true));
+            this.organizeNodes();
+        };
+        Builder.prototype.addOutputNode = function (label) {
+            this.outputNodes.push(new GraphicsNode(new ionode_1.IONode(label), false));
+            this.organizeNodes();
+        };
+        Builder.prototype.organizeNodes = function () {
+            var _this = this;
+            var workingHeight = this.height - this.padding * 2;
+            var workingWidth = this.width - this.padding * 2;
+            var padding = 16;
+            this.inputNodes.forEach(function (node, i) {
+                node.x = _this.padding + padding;
+                node.cy = _this.padding + (workingHeight / (_this.inputNodes.length + 1)) * (i + 1);
+            });
+            this.outputNodes.forEach(function (node, i) {
+                node.x = _this.padding + workingWidth - padding - node.size;
+                node.cy = _this.padding + (workingHeight / (_this.outputNodes.length + 1)) * (i + 1);
+            });
+        };
         Builder.prototype.gateWithNode = function (node) {
             return this.gates.find(function (gate) { return gate.gate.outputNodes.indexOf(node) !== -1 || gate.gate.inputNodes.indexOf(node) !== -1; });
         };
         Builder.prototype.draw = function () {
             var _this = this;
             this.canvas.clear();
-            var padding = 32;
-            this.canvas.fillRect(padding, padding, this.width - padding * 2, this.height - padding * 2, "rgba(255,255,255,1)");
-            this.gates.forEach(function (gate) { return gate.draw(_this.canvas); });
+            this.canvas.fill("rgba(0,0,0,0.5)");
+            this.canvas.fillRoundedRect(this.padding, this.padding, this.width - this.padding * 2, this.height - this.padding * 2, 20, "rgba(255,255,255,0.5)");
+            this.inputNodes.forEach(function (node) { return node.draw(_this.canvas); });
+            this.outputNodes.forEach(function (node) { return node.draw(_this.canvas); });
+            this.gates.forEach(function (gate) { return gate.drawGate(_this.canvas); });
+            this.gates.forEach(function (gate) { return gate.drawNodes(_this.canvas, false); });
+            this.gates.forEach(function (gate) { return gate.drawNodes(_this.canvas, true); });
             this.drawConnections();
             if (this.hovering) {
-                this.hovering.draw(this.movingGate ? this.parent.overlay : this.canvas);
+                this.hovering.drawGate(this.movingGate ? this.parent.overlay : this.canvas);
+                this.hovering.drawNodes(this.movingGate ? this.parent.overlay : this.canvas, true);
+                this.hovering.drawNodes(this.movingGate ? this.parent.overlay : this.canvas, false);
             }
             if (this.connectingGate) {
                 var opt = this.connectingGate.nodePoint(this.connectingOutput, false, true);
-                this.canvas.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, "red", 2);
+                this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.colorIndex);
+            }
+            else if (this.connectingNode) {
+                this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.colorIndex);
             }
         };
         Builder.prototype.drawConnections = function () {
@@ -60,12 +94,32 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
                 gate.gate.outputNodes.forEach(function (node, i) {
                     var opt = gate.nodePoint(i, false, true);
                     node.outputNodes.forEach(function (inputNode, j) {
-                        var gwn = _this.gateWithNode(inputNode);
-                        var ipt = gwn.nodePoint(gwn.gate.inputNodes.indexOf(inputNode), true, true);
-                        _this.canvas.drawLine(opt.x, opt.y, ipt.x, ipt.y, "red", 2);
+                        var ipt = _this.nodePoint(inputNode);
+                        _this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.colorIndex);
                     });
                 });
             });
+            this.inputNodes.forEach(function (node) {
+                node.node.outputNodes.forEach(function (inputNode, i) {
+                    var ipt = _this.nodePoint(inputNode);
+                    _this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.colorIndex);
+                });
+            });
+        };
+        Builder.prototype.nodePoint = function (node) {
+            var match;
+            if (match = this.inputNodes.find(function (n) { return n.node === node; }) || this.outputNodes.find(function (n) { return n.node === node; })) {
+                return { x: match.cx, y: match.cy };
+            }
+            else if (match = this.gateWithNode(node)) {
+                return match.nodePoint(match.gate.inputNodes.indexOf(node), true, true);
+            }
+            else {
+                throw "cant find the node ://";
+            }
+        };
+        Builder.prototype.drawLine = function (x1, y1, x2, y2, colorIndex) {
+            this.canvas.drawLine(x1, y1, x2, y2, Builder.Colors[colorIndex], 2);
         };
         Builder.prototype.addGate = function (gate) {
             var g = new GraphicsGate(gate);
@@ -86,6 +140,7 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
         Builder.prototype.mouseDown = function (x, y, e) {
             e.preventDefault();
             var hoveredGate = this.hoveredGate();
+            var n;
             if (hoveredGate) {
                 if (e.button === 0) {
                     this.movingGate = hoveredGate;
@@ -100,6 +155,9 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
                     this.connectingOutput = hoveredGate.getConnectingOutput(y);
                 }
             }
+            else if (n = this.inputNodes.find(function (node) { return node.containsPoint(x, y); })) {
+                this.connectingNode = n;
+            }
         };
         Builder.prototype.mouseMove = function (x, y, mouseDown, lx, ly, ox, oy, e) {
             e.preventDefault();
@@ -112,9 +170,11 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             else if (this.connectingGate) {
                 var p1 = this.connectingGate.nodePoint(this.connectingOutput, false);
             }
+            else if (this.connectingNode) {
+            }
             else {
                 var hoveredGate = this.hoveredGate();
-                if (hoveredGate) {
+                if (hoveredGate || this.inputNodes.some(function (node) { return node.containsPoint(x, y); }) || this.outputNodes.some(function (node) { return node.containsPoint(x, y); })) {
                     this.canvas.canvas.style.cursor = "pointer";
                     this.parent.overlay.canvas.style.cursor = "pointer";
                 }
@@ -127,13 +187,27 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
         Builder.prototype.mouseUp = function (x, y, ox, oy, e) {
             e.preventDefault();
             this.movingGate = null;
+            var n = null;
             if (this.connectingGate) {
                 var h = this.hoveredGate();
                 if (h && h !== this.connectingGate) {
                     this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
                 }
+                else if (n = this.outputNodes.find(function (node) { return node.containsPoint(x, y); })) {
+                    this.connectingGate.connectNode(this.connectingOutput, n);
+                }
+            }
+            else if (this.connectingNode) {
+                var h = this.hoveredGate();
+                if (h) {
+                    this.connectingNode.node.connect(h.gate.inputNodes[h.getConnectingInput(y)]);
+                }
+                else if (n = this.outputNodes.find(function (node) { return node.containsPoint(x, y); })) {
+                    this.connectingNode.node.connect(n.node);
+                }
             }
             this.connectingGate = null;
+            this.connectingNode = null;
         };
         Builder.prototype.hoveredGate = function () {
             var _this = this;
@@ -148,9 +222,71 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             this.hovering = ret;
             return ret;
         };
+        Builder.Colors = [
+            "#e6194B",
+            "#3cb44b",
+            "#ffe119",
+            "#1111d8",
+            "#ff5000",
+            "#911eb4",
+            "#00ffc7",
+            "#42d4f4",
+            "#f032e6",
+            "#0061ff",
+            "#469990",
+            "#9A6324",
+            "#fffac8",
+            "#800000",
+            "#aaffc3",
+            "#536336",
+            "#808000",
+            "#3c545b",
+            "#000075",
+            "#000000"
+        ];
+        Builder.ColorIndex = 0;
         return Builder;
     }());
     exports.Builder = Builder;
+    var GraphicsNode = (function () {
+        function GraphicsNode(node, isInput) {
+            this.x = 0;
+            this.y = 0;
+            this.size = 32;
+            this.node = node;
+            this.input = isInput;
+            this.colorIndex = Builder.ColorIndex++;
+        }
+        GraphicsNode.prototype.draw = function (canvas) {
+            canvas.fillCircleInSquare(this.x, this.y, this.size, "white");
+            canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
+        };
+        Object.defineProperty(GraphicsNode.prototype, "cx", {
+            get: function () {
+                return this.x + this.size / 2;
+            },
+            set: function (cx) {
+                this.x = cx - this.size / 2;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(GraphicsNode.prototype, "cy", {
+            get: function () {
+                return this.y + this.size / 2;
+            },
+            set: function (cy) {
+                this.y = cy - this.size / 2;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        GraphicsNode.prototype.containsPoint = function (x, y) {
+            return utils_1.pointInRect(x, y, this.x, this.y, this.size, this.size);
+        };
+        return GraphicsNode;
+    }());
+    exports.GraphicsNode = GraphicsNode;
     var GraphicsGate = (function () {
         function GraphicsGate(gate) {
             this.x = 0;
@@ -164,12 +300,11 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             this.gate = gate;
             var nodes = Math.max(gate.inputNodes.length, gate.outputNodes.length);
             this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
+            this.colorIndex = Builder.ColorIndex++;
         }
-        GraphicsGate.prototype.draw = function (canvas) {
-            this.drawNodes(canvas, true);
-            this.drawNodes(canvas, false);
-            canvas.fillRect(this.x, this.y, this.width, this.height, this.color);
-            canvas.drawRect(this.x, this.y, this.width, this.height, "black", 3, true);
+        GraphicsGate.prototype.drawGate = function (canvas) {
+            canvas.fillRoundedRect(this.x, this.y, this.width, this.height, 5, this.color, false);
+            canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "black", 2, false);
             canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
         };
         GraphicsGate.prototype.drawNodes = function (canvas, input) {
@@ -177,9 +312,12 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             for (var i = 0; i < nodeList.length; i++) {
                 var pt = this.nodePoint(i, input);
                 var node = nodeList[i];
-                canvas.drawRect(pt.x, pt.y, this.nodeSize, this.nodeSize, "black", 1, true);
+                canvas.fillRoundedRect(pt.x, pt.y, this.nodeSize, this.nodeSize, 5, this.color, false);
+                canvas.drawRoundedRect(pt.x, pt.y, this.nodeSize, this.nodeSize, 3, "black", 2, false);
                 if (this.hovered) {
                     var fontSize = 14;
+                    var fontSize2 = fontSize + 2;
+                    canvas.fillText(node.label, pt.x + (input ? -this.nodeSize / 2 : this.nodeSize + this.nodeSize / 2), pt.y + this.nodeSize / 2, "white", "middle", input ? "right" : "left", fontSize + "px monospace");
                     canvas.fillText(node.label, pt.x + (input ? -this.nodeSize / 2 : this.nodeSize + this.nodeSize / 2), pt.y + this.nodeSize / 2, "black", "middle", input ? "right" : "left", fontSize + "px monospace");
                 }
             }
@@ -210,10 +348,26 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             return this.nodeIndexFromY(y, true);
         };
         GraphicsGate.prototype.connect = function (output, gate, input) {
+            var srcNode = this.gate.outputNodes[output];
             var inputNode = gate.gate.inputNodes[input];
-            var o = this.gate.outputNodes[output].connect(inputNode);
+            var o = srcNode.connect(inputNode);
             if (o.success) {
                 return o.oustedNode;
+            }
+            else {
+                srcNode.disconnect(inputNode);
+                return null;
+            }
+        };
+        GraphicsGate.prototype.connectNode = function (output, node) {
+            var srcNode = this.gate.outputNodes[output];
+            var inputNode = node.node;
+            var o = srcNode.connect(inputNode);
+            if (o.success) {
+                return o.oustedNode;
+            }
+            else {
+                srcNode.disconnect(inputNode);
             }
         };
         return GraphicsGate;
@@ -233,7 +387,9 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             var c = new canvas_1.Canvas({ width: g.width + g.nodeSize * 2, height: g.height + 8 });
             g.x = g.nodeSize;
             g.y = 4;
-            g.draw(c);
+            g.drawGate(c);
+            g.drawNodes(c, true);
+            g.drawNodes(c, false);
             var container = document.createElement("div");
             container.className = "gate";
             container.appendChild(c.canvas);
@@ -266,12 +422,27 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             this.container.className = "toolbar";
             this.parent = parent;
             parent.container.appendChild(this.container);
+            this.makeButton("img/play.png", "Run", function () { });
+            this.makeButton("img/step.png", "Step", function () { });
         }
+        Toolbar.prototype.makeButton = function (imgSrc, text, onclick) {
+            var c = document.createElement("div");
+            c.className = "toolbar-button";
+            var i = document.createElement("img");
+            i.src = imgSrc;
+            c.appendChild(i);
+            var l = document.createElement("div");
+            l.innerText = text;
+            c.appendChild(l);
+            c.addEventListener("click", onclick);
+            this.container.appendChild(c);
+        };
         return Toolbar;
     }());
     exports.Toolbar = Toolbar;
     var BuilderContainer = (function () {
         function BuilderContainer(parent, resX, resY) {
+            this.parent = parent;
             this.container = document.createElement("div");
             this.container.className = "container-builder";
             this.builder = new Builder(this, resX, resY);
@@ -285,6 +456,8 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
             parent.appendChild(this.container);
             this.hideOverlay();
             window.requestAnimationFrame(this.drawReq.bind(this));
+            window.addEventListener("resize", this.resize.bind(this));
+            this.resize();
         }
         BuilderContainer.prototype.showOverlay = function () {
             this.overlay.canvas.style["z-index"] = 1;
@@ -315,6 +488,30 @@ define(["require", "exports", "./canvas", "./utils"], function (require, exports
         BuilderContainer.prototype.drawReq = function () {
             this.draw();
             window.requestAnimationFrame(this.drawReq.bind(this));
+        };
+        Object.defineProperty(BuilderContainer.prototype, "size", {
+            get: function () {
+                var c = this.container.getBoundingClientRect();
+                return { width: c.width, height: c.height };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(BuilderContainer.prototype, "innerSize", {
+            get: function () {
+                return { width: this.container.offsetWidth, height: this.container.offsetHeight };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        BuilderContainer.prototype.resize = function () {
+            var psize = this.parent.getBoundingClientRect();
+            var w = psize.width;
+            var h = psize.height;
+            var size = this.innerSize;
+            var scaleX = w / size.width;
+            var scaleY = h / size.height;
+            this.container.style.transform = "scale(" + scaleX + "," + scaleY + ")";
         };
         return BuilderContainer;
     }());

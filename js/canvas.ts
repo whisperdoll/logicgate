@@ -151,6 +151,7 @@ export class Canvas
         let x = e.pageX;
         let y = e.pageY;
 
+
         if (e.changedTouches)
         {
             x = e.changedTouches[0].pageX;
@@ -162,10 +163,10 @@ export class Canvas
             this.deepCalcPosition();
         }
 
-        let ox = this.usingDeepCalc ? this.offset.x : this.canvas.offsetLeft;
-        let oy = this.usingDeepCalc ? this.offset.y : this.canvas.offsetTop;
-
         let bounds = this.canvas.getBoundingClientRect();
+
+        let ox = this.usingDeepCalc ? this.offset.x : bounds.left;
+        let oy = this.usingDeepCalc ? this.offset.y : bounds.top;
 
         if (this.align.horizontal && ox > 0)
         {
@@ -465,6 +466,70 @@ export class Canvas
         h = Canvas.round(h);
 
         this.context.fillRect(x, y, w, h);
+    }
+
+    // https://stackoverflow.com/a/7838871
+    drawRoundedRect(x, y, w, h, r, color, lineWidth, sharp)
+    {
+        this.color = color;
+        this.lineWidth = lineWidth;
+
+        if (sharp === undefined) sharp = true;
+
+        x = Canvas.round(x);
+        y = Canvas.round(y);
+        w = Canvas.round(w);
+        h = Canvas.round(h);
+        r = Canvas.round(r);
+
+        if (sharp)
+        {
+            x += 0.5;
+            y += 0.5;
+        }
+
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+
+        this.context.beginPath();
+        this.context.moveTo(x+r, y);
+        this.context.arcTo(x+w, y,   x+w, y+h, r);
+        this.context.arcTo(x+w, y+h, x,   y+h, r);
+        this.context.arcTo(x,   y+h, x,   y,   r);
+        this.context.arcTo(x,   y,   x+w, y,   r);
+        this.context.closePath();
+        this.context.stroke();
+    }
+
+    fillRoundedRect(x, y, w, h, r, color, sharp?)
+    {
+        this.color = color;
+
+        if (sharp === undefined) sharp = true;
+
+        x = Canvas.round(x);
+        y = Canvas.round(y);
+        w = Canvas.round(w);
+        h = Canvas.round(h);
+        r = Canvas.round(r);
+
+        if (sharp)
+        {
+            x += 0.5;
+            y += 0.5;
+        }
+
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+
+        this.context.beginPath();
+        this.context.moveTo(x+r, y);
+        this.context.arcTo(x+w, y,   x+w, y+h, r);
+        this.context.arcTo(x+w, y+h, x,   y+h, r);
+        this.context.arcTo(x,   y+h, x,   y,   r);
+        this.context.arcTo(x,   y,   x+w, y,   r);
+        this.context.closePath();
+        this.context.fill();
     }
 
     fill(color)

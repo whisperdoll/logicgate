@@ -56,6 +56,7 @@ export class IONode
         if (i !== -1)
         {
             this.outputNodes.splice(i, 1);
+            node.inputNode = null;
         }
     }
 }

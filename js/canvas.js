@@ -117,9 +117,9 @@ define(["require", "exports"], function (require, exports) {
             if (this.usingDeepCalc) {
                 this.deepCalcPosition();
             }
-            var ox = this.usingDeepCalc ? this.offset.x : this.canvas.offsetLeft;
-            var oy = this.usingDeepCalc ? this.offset.y : this.canvas.offsetTop;
             var bounds = this.canvas.getBoundingClientRect();
+            var ox = this.usingDeepCalc ? this.offset.x : bounds.left;
+            var oy = this.usingDeepCalc ? this.offset.y : bounds.top;
             if (this.align.horizontal && ox > 0) {
                 ox = (2 * ox - bounds.width) / 2;
             }
@@ -364,6 +364,59 @@ define(["require", "exports"], function (require, exports) {
             w = Canvas.round(w);
             h = Canvas.round(h);
             this.context.fillRect(x, y, w, h);
+        };
+        Canvas.prototype.drawRoundedRect = function (x, y, w, h, r, color, lineWidth, sharp) {
+            this.color = color;
+            this.lineWidth = lineWidth;
+            if (sharp === undefined)
+                sharp = true;
+            x = Canvas.round(x);
+            y = Canvas.round(y);
+            w = Canvas.round(w);
+            h = Canvas.round(h);
+            r = Canvas.round(r);
+            if (sharp) {
+                x += 0.5;
+                y += 0.5;
+            }
+            if (w < 2 * r)
+                r = w / 2;
+            if (h < 2 * r)
+                r = h / 2;
+            this.context.beginPath();
+            this.context.moveTo(x + r, y);
+            this.context.arcTo(x + w, y, x + w, y + h, r);
+            this.context.arcTo(x + w, y + h, x, y + h, r);
+            this.context.arcTo(x, y + h, x, y, r);
+            this.context.arcTo(x, y, x + w, y, r);
+            this.context.closePath();
+            this.context.stroke();
+        };
+        Canvas.prototype.fillRoundedRect = function (x, y, w, h, r, color, sharp) {
+            this.color = color;
+            if (sharp === undefined)
+                sharp = true;
+            x = Canvas.round(x);
+            y = Canvas.round(y);
+            w = Canvas.round(w);
+            h = Canvas.round(h);
+            r = Canvas.round(r);
+            if (sharp) {
+                x += 0.5;
+                y += 0.5;
+            }
+            if (w < 2 * r)
+                r = w / 2;
+            if (h < 2 * r)
+                r = h / 2;
+            this.context.beginPath();
+            this.context.moveTo(x + r, y);
+            this.context.arcTo(x + w, y, x + w, y + h, r);
+            this.context.arcTo(x + w, y + h, x, y + h, r);
+            this.context.arcTo(x, y + h, x, y, r);
+            this.context.arcTo(x, y, x + w, y, r);
+            this.context.closePath();
+            this.context.fill();
         };
         Canvas.prototype.fill = function (color) {
             this.fillRect(0, 0, this.width, this.height, color);

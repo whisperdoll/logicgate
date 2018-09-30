@@ -10,14 +10,46 @@ export class Builder
     public gates : GraphicsGate[] = [];
     public mouse : { x : number, y : number } = { x: 0, y: 0 };
 
+    public inputNodes : GraphicsNode[] = [];
+    public outputNodes : GraphicsNode[] = [];
+
     public movingGate : GraphicsGate;
     public movingOffset : { x : number, y : number };
 
     private connectingGate : GraphicsGate;
     private connectingOutput : number;
 
+    private connectingNode : GraphicsNode;
+
     public hovering : GraphicsGate;
     private parent : BuilderContainer;
+
+    public padding : number = 32;
+
+    public static Colors : string[] = [
+        "#e6194B",
+        "#3cb44b",
+        "#ffe119",
+        "#1111d8",
+        "#ff5000",
+        "#911eb4",
+        "#00ffc7",
+        "#42d4f4",
+        "#f032e6",
+        "#0061ff",
+        "#469990",
+        "#9A6324",
+        "#fffac8",
+        "#800000",
+        "#aaffc3",
+        "#536336",
+        "#808000",
+        "#3c545b",
+        "#000075",
+        "#000000"
+    ];
+
+    public static ColorIndex : number = 0;
 
     constructor(parent : BuilderContainer, width : number, height : number)
     {
@@ -43,7 +75,6 @@ export class Builder
         this.container.className = "builder";
 
         parent.container.appendChild(this.container);
-        
     }
 
     public get height() : number
@@ -56,6 +87,38 @@ export class Builder
         return this.canvas.width;
     }
 
+    public addInputNode(label : string)
+    {
+        this.inputNodes.push(new GraphicsNode(new IONode(label), true));
+        this.organizeNodes();
+    }
+
+    public addOutputNode(label : string)
+    {
+        this.outputNodes.push(new GraphicsNode(new IONode(label), false));
+        this.organizeNodes();
+    }
+
+    public organizeNodes()
+    {
+        let workingHeight = this.height - this.padding * 2;
+        let workingWidth = this.width - this.padding * 2;
+
+        let padding = 16;
+
+        this.inputNodes.forEach((node : GraphicsNode, i : number) =>
+        {
+            node.x = this.padding + padding;
+            node.cy = this.padding + (workingHeight / (this.inputNodes.length + 1)) * (i + 1);
+        });
+
+        this.outputNodes.forEach((node : GraphicsNode, i : number) =>
+        {
+            node.x = this.padding + workingWidth - padding - node.size;
+            node.cy = this.padding + (workingHeight / (this.outputNodes.length + 1)) * (i + 1);
+        });
+    }
+
     public gateWithNode(node : IONode) : GraphicsGate
     {
         return this.gates.find(gate => gate.gate.outputNodes.indexOf(node) !== -1 || gate.gate.inputNodes.indexOf(node) !== -1);
@@ -65,25 +128,36 @@ export class Builder
     {
         this.canvas.clear();
 
-        let padding = 32;
-        this.canvas.fillRect(padding, padding,
-            this.width - padding * 2, this.height - padding * 2, "rgba(255,255,255,1)");
+        this.canvas.fill("rgba(0,0,0,0.5)");
+        this.canvas.fillRoundedRect(this.padding, this.padding,
+            this.width - this.padding * 2, this.height - this.padding * 2, 20, "rgba(255,255,255,0.5)");
 
-        this.gates.forEach(gate => gate.draw(this.canvas));
+        this.inputNodes.forEach(node => node.draw(this.canvas));
+        this.outputNodes.forEach(node => node.draw(this.canvas));
+
+        this.gates.forEach(gate => gate.drawGate(this.canvas));
+        this.gates.forEach(gate => gate.drawNodes(this.canvas, false));
+        this.gates.forEach(gate => gate.drawNodes(this.canvas, true));
 
         this.drawConnections();
 
         if (this.hovering)
         {
             //this.canvas.opacity = 0.75;
-            this.hovering.draw(this.movingGate ? this.parent.overlay : this.canvas);
+            this.hovering.drawGate(this.movingGate ? this.parent.overlay : this.canvas);
+            this.hovering.drawNodes(this.movingGate ? this.parent.overlay : this.canvas, true);
+            this.hovering.drawNodes(this.movingGate ? this.parent.overlay : this.canvas, false);
             //this.canvas.opacity = 1;
         }
 
         if (this.connectingGate)
         {
             let opt = this.connectingGate.nodePoint(this.connectingOutput, false, true);
-            this.canvas.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, "red", 2);
+            this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.colorIndex);
+        }
+        else if (this.connectingNode)
+        {
+            this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.colorIndex);
         }
     }
 
@@ -97,13 +171,44 @@ export class Builder
                 
                 node.outputNodes.forEach((inputNode : IONode, j : number) =>
                 {
-                    let gwn = this.gateWithNode(inputNode);
-                    let ipt = gwn.nodePoint(gwn.gate.inputNodes.indexOf(inputNode), true, true);
-
-                    this.canvas.drawLine(opt.x, opt.y, ipt.x, ipt.y, "red", 2);
+                    let ipt = this.nodePoint(inputNode);
+                    this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.colorIndex);
                 });
             });
         });
+
+        this.inputNodes.forEach((node : GraphicsNode) =>
+        {
+            node.node.outputNodes.forEach((inputNode : IONode, i : number) =>
+            {
+                let ipt = this.nodePoint(inputNode);
+                this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.colorIndex);
+            });
+        });
+    }
+
+    public nodePoint(node : IONode) : { x : number, y : number }
+    {
+        let match;
+        
+        if (match = this.inputNodes.find(n => n.node === node) || this.outputNodes.find(n => n.node === node))
+        {
+            return { x: match.cx, y: match.cy };
+        }
+        else if (match = this.gateWithNode(node))
+        {
+            return match.nodePoint(match.gate.inputNodes.indexOf(node), true, true);
+        }
+        else
+        {
+            throw "cant find the node ://";
+            //return null;
+        }
+    }
+
+    public drawLine(x1, y1, x2, y2, colorIndex)
+    {
+        this.canvas.drawLine(x1, y1, x2, y2, Builder.Colors[colorIndex], 2);
     }
 
     public addGate(gate : Gate) : GraphicsGate
@@ -136,6 +241,7 @@ export class Builder
         e.preventDefault();
 
         let hoveredGate = this.hoveredGate();
+        let n;
 
         if (hoveredGate)
         {
@@ -155,11 +261,16 @@ export class Builder
                 this.connectingOutput = hoveredGate.getConnectingOutput(y);
             }
         }
+        else if (n = this.inputNodes.find(node => node.containsPoint(x, y)))
+        {
+            this.connectingNode = n;
+        }
     }
 
     public mouseMove(x : number, y : number, mouseDown : boolean, lx : number, ly : number, ox : number, oy : number, e : MouseEvent) : void
     {
         e.preventDefault();
+        //console.log(x, y);
 
         this.mouse.x = x;
         this.mouse.y = y;
@@ -173,11 +284,15 @@ export class Builder
         {
             let p1 = this.connectingGate.nodePoint(this.connectingOutput, false);
         }
+        else if (this.connectingNode)
+        {
+
+        }
         else
         {
             let hoveredGate = this.hoveredGate();
     
-            if (hoveredGate)
+            if (hoveredGate || this.inputNodes.some(node => node.containsPoint(x, y)) || this.outputNodes.some(node => node.containsPoint(x, y)))
             {
                 this.canvas.canvas.style.cursor = "pointer";
                 this.parent.overlay.canvas.style.cursor = "pointer";
@@ -195,6 +310,8 @@ export class Builder
         e.preventDefault();
         this.movingGate = null;
 
+        let n = null;
+
         if (this.connectingGate)
         {
             let h = this.hoveredGate();
@@ -202,9 +319,26 @@ export class Builder
             {
                 this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
             }
+            else if (n = this.outputNodes.find(node => node.containsPoint(x, y)))
+            {
+                this.connectingGate.connectNode(this.connectingOutput, n);
+            }
+        }
+        else if (this.connectingNode)
+        {
+            let h = this.hoveredGate();
+            if (h)
+            {
+                this.connectingNode.node.connect(h.gate.inputNodes[h.getConnectingInput(y)]);
+            }
+            else if (n = this.outputNodes.find(node => node.containsPoint(x, y)))
+            {
+                this.connectingNode.node.connect(n.node);
+            }
         }
 
         this.connectingGate = null;
+        this.connectingNode = null;
     }
 
     private hoveredGate() : GraphicsGate
@@ -228,6 +362,54 @@ export class Builder
     }
 }
 
+export class GraphicsNode
+{
+    public x : number = 0;
+    public y : number = 0;
+    public size : number = 32;
+    public node : IONode;
+    public input : boolean;
+    public colorIndex : number;
+
+    constructor(node : IONode, isInput : boolean)
+    {
+        this.node = node;
+        this.input = isInput;
+        this.colorIndex = Builder.ColorIndex++;
+    }
+
+    public draw(canvas : Canvas) : void
+    {
+        canvas.fillCircleInSquare(this.x, this.y, this.size, "white");
+        canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
+    }
+
+    public get cx() : number
+    {
+        return this.x + this.size / 2;
+    }
+
+    public get cy() : number
+    {
+        return this.y + this.size / 2;
+    }
+
+    public set cx(cx : number)
+    {
+        this.x = cx - this.size / 2;
+    }
+
+    public set cy(cy : number)
+    {
+        this.y = cy - this.size / 2;
+    }
+
+    public containsPoint(x : number, y : number) : boolean
+    {
+        return pointInRect(x, y, this.x, this.y, this.size, this.size);
+    }
+}
+
 export class GraphicsGate
 {
     public x : number = 0;
@@ -239,21 +421,23 @@ export class GraphicsGate
     public nodeSize : number = 12;
     private nodePadding : number = 8;
     public hovered : boolean = false;
+    public colorIndex : number;
 
     constructor(gate : Gate)
     {
         this.gate = gate;
         let nodes = Math.max(gate.inputNodes.length, gate.outputNodes.length);
         this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
+        this.colorIndex = Builder.ColorIndex++;
     }
 
-    public draw(canvas : Canvas) : void
+    public drawGate(canvas : Canvas) : void
     {
-        this.drawNodes(canvas, true);
-        this.drawNodes(canvas, false);
+        //this.drawNodes(canvas, true);
+        //this.drawNodes(canvas, false);
 
-        canvas.fillRect(this.x, this.y, this.width, this.height, this.color);
-        canvas.drawRect(this.x, this.y, this.width, this.height, "black", 3, true);
+        canvas.fillRoundedRect(this.x, this.y, this.width, this.height, 5, this.color, false);
+        canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "black", 2, false);
         canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
     }
 
@@ -265,19 +449,41 @@ export class GraphicsGate
             let pt = this.nodePoint(i, input);
             let node = nodeList[i];
 
-            canvas.drawRect(
+            canvas.fillRoundedRect(
                 pt.x,
                 pt.y,
                 this.nodeSize,
                 this.nodeSize,
+                5,
+                this.color,
+                false
+            );
+
+            canvas.drawRoundedRect(
+                pt.x,
+                pt.y,
+                this.nodeSize,
+                this.nodeSize,
+                3,
                 "black",
-                1,
-                true
+                2,
+                false
             );
 
             if (this.hovered)
             {
                 let fontSize = 14;
+                let fontSize2 = fontSize + 2;
+    
+                canvas.fillText(
+                    node.label,
+                    pt.x + (input ? -this.nodeSize / 2 : this.nodeSize + this.nodeSize / 2),
+                    pt.y + this.nodeSize / 2,
+                    "white",
+                    "middle",
+                    input ? "right" : "left",
+                    fontSize + "px monospace"
+                );
     
                 canvas.fillText(
                     node.label,
@@ -331,12 +537,34 @@ export class GraphicsGate
 
     public connect(output : number, gate : GraphicsGate, input : number) : IONode
     {
+        let srcNode = this.gate.outputNodes[output];
         let inputNode = gate.gate.inputNodes[input];
-        let o = this.gate.outputNodes[output].connect(inputNode);
+        let o = srcNode.connect(inputNode);
 
         if (o.success)
         {
             return o.oustedNode;
+        }
+        else
+        {
+            srcNode.disconnect(inputNode);
+            return null;
+        }
+    }
+
+    public connectNode(output : number, node : GraphicsNode) : IONode
+    {
+        let srcNode = this.gate.outputNodes[output];
+        let inputNode = node.node;
+        let o = srcNode.connect(inputNode);
+
+        if (o.success)
+        {
+            return o.oustedNode;
+        }
+        else
+        {
+            srcNode.disconnect(inputNode);
         }
     }
 }
@@ -362,7 +590,9 @@ export class GateList
         let c = new Canvas({ width: g.width + g.nodeSize * 2, height: g.height + 8 });
         g.x = g.nodeSize;
         g.y = 4;
-        g.draw(c);
+        g.drawGate(c);
+        g.drawNodes(c, true);
+        g.drawNodes(c, false);
 
         let container = document.createElement("div");
         container.className = "gate";
@@ -409,12 +639,34 @@ export class Toolbar
         this.container.className = "toolbar";
         this.parent = parent;
         parent.container.appendChild(this.container);
+
+        this.makeButton("img/play.png", "Run", ()=>{});
+        this.makeButton("img/step.png", "Step", ()=>{});
+    }
+
+    public makeButton(imgSrc, text, onclick) : void
+    {
+        let c = document.createElement("div");
+        c.className = "toolbar-button";
+        
+        let i = document.createElement("img");
+        i.src = imgSrc;
+        c.appendChild(i);
+
+        let l = document.createElement("div");
+        l.innerText = text;
+        c.appendChild(l);
+
+        c.addEventListener("click", onclick);
+
+        this.container.appendChild(c);
     }
 }
 
 export class BuilderContainer
 {
     public container : HTMLElement;
+    public parent : HTMLElement;
     public builder : Builder;
     public gateList : GateList;
     public toolbar : Toolbar;
@@ -422,6 +674,7 @@ export class BuilderContainer
 
     constructor(parent : HTMLElement, resX : number, resY : number)
     {
+        this.parent = parent;
         this.container = document.createElement("div");
         this.container.className = "container-builder";
         this.builder = new Builder(this, resX, resY);
@@ -439,6 +692,9 @@ export class BuilderContainer
         parent.appendChild(this.container);
         this.hideOverlay();
         window.requestAnimationFrame(this.drawReq.bind(this));
+
+        window.addEventListener("resize", this.resize.bind(this));
+        this.resize();
     }
 
     public showOverlay() : void
@@ -489,5 +745,30 @@ export class BuilderContainer
     {
         this.draw();
         window.requestAnimationFrame(this.drawReq.bind(this));
+    }
+
+    public get size() : { width : number, height : number }
+    {
+        let c = this.container.getBoundingClientRect();
+        return { width: c.width, height: c.height };
+    }
+
+    public get innerSize() : { width : number, height : number }
+    {
+        return { width: this.container.offsetWidth, height: this.container.offsetHeight };
+    }
+
+    public resize() : void
+    {
+        let psize = this.parent.getBoundingClientRect();
+        let w = psize.width;
+        let h = psize.height;
+
+        let size = this.innerSize;
+        let scaleX = w / size.width;
+        let scaleY = h / size.height;
+
+        this.container.style.transform = "scale(" + scaleX + "," + scaleY + ")";
+        //this.overlay.canvas.style.transform = this.container.style.transform;
     }
 }
