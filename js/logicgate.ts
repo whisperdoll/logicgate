@@ -1,19 +1,20 @@
 import { Builder, GateList, BuilderContainer } from "./builder";
 import { OpGate, ANDGate, ORGate, XORGate } from "./gate"
+import { UI } from "./ui";
 
 let container = document.getElementById("container-builder");
 
-let bc = new BuilderContainer(document.body, 864, 486);
+let ui = new UI(document.body, 864, 486);
 
-window["b"] = bc;
+window["b"] = ui;
 
-let l = bc.gateList;
+let l = ui.builderContainer.gateList;
 l.appendGateElement(ANDGate);
 l.appendGateElement(ORGate);
 l.appendGateElement(XORGate);
 
-bc.builder.addInputNode("input1");
-bc.builder.addInputNode("input2");
-bc.builder.addInputNode("inputC");
-bc.builder.addOutputNode("S");
-bc.builder.addOutputNode("C");
+ui.builderContainer.builder.addInputNode("input1");
+ui.builderContainer.builder.addInputNode("input2");
+ui.builderContainer.builder.addInputNode("inputC");
+ui.builderContainer.builder.addOutputNode("S");
+ui.builderContainer.builder.addOutputNode("C");

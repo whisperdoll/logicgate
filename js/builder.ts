@@ -2,6 +2,7 @@ import { Canvas } from "./canvas"
 import { Gate } from "./gate"
 import { pointInRect } from "./utils"
 import { IONode } from "./ionode"
+import { UI } from "./ui";
 
 export class Builder
 {
@@ -25,6 +26,8 @@ export class Builder
     private parent : BuilderContainer;
 
     public padding : number = 32;
+    private idPool : number[] = [];
+    private idCounter = 0;
 
     public static Colors : string[] = [
         "#e6194B",
@@ -87,16 +90,83 @@ export class Builder
         return this.canvas.width;
     }
 
+    public addIONode(label : string, input : boolean)
+    {
+        let n = new GraphicsNode(new IONode(label), input);
+        n.id = this.genId();
+        this[input ? "inputNodes" : "outputNodes"].push(n);
+        this.organizeNodes();
+    }
+
     public addInputNode(label : string)
     {
-        this.inputNodes.push(new GraphicsNode(new IONode(label), true));
-        this.organizeNodes();
+        return this.addIONode(label, true);
     }
 
     public addOutputNode(label : string)
     {
-        this.outputNodes.push(new GraphicsNode(new IONode(label), false));
+        return this.addIONode(label, false);
+    }
+
+    public removeIONode(node : GraphicsNode, input : boolean)
+    {
+        node.node.outputNodes.forEach(outputNode =>
+        {
+            node.node.disconnect(outputNode);
+        });
+
+        let list = this[input ? "inputNodes" : "outputNodes"];
+        list.splice(list.indexOf(node), 1);
+
         this.organizeNodes();
+    }
+
+    public removeInputNode(node : GraphicsNode)
+    {
+        return this.removeIONode(node, true);
+    }
+
+    public removeOutputNode(node : GraphicsNode)
+    {
+        return this.removeIONode(node, false);
+    }
+
+    public addGate(gate : Gate) : GraphicsGate
+    {
+        let g = new GraphicsGate(gate);
+        g.id = this.genId();
+        this.gates.push(g);
+        return g;
+    }
+
+    public removeGate(gate : GraphicsGate) : void
+    {
+        gate.gate.inputNodes.forEach((node : IONode) =>
+        {
+            node.inputNode && node.inputNode.disconnect(node);
+        });
+
+        gate.gate.outputNodes.forEach((node : IONode) =>
+        {
+            node.outputNodes.forEach((onode : IONode) =>
+            {
+                node.disconnect(onode);
+            });
+        });
+
+        this.idPool.push(gate.id);
+
+        this.gates.splice(this.gates.indexOf(gate), 1);
+    }
+
+    private genId() : number
+    {
+        if (this.idPool.length > 0)
+        {
+            return this.idPool.splice(0 ,1)[0];
+        }
+
+        return this.idCounter++;
     }
 
     public organizeNodes()
@@ -209,31 +279,6 @@ export class Builder
     public drawLine(x1, y1, x2, y2, colorIndex)
     {
         this.canvas.drawLine(x1, y1, x2, y2, Builder.Colors[colorIndex], 2);
-    }
-
-    public addGate(gate : Gate) : GraphicsGate
-    {
-        let g = new GraphicsGate(gate);
-        this.gates.push(g);
-        return g;
-    }
-
-    public removeGate(gate : GraphicsGate) : void
-    {
-        gate.gate.inputNodes.forEach((node : IONode) =>
-        {
-            node.inputNode && node.inputNode.disconnect(node);
-        });
-
-        gate.gate.outputNodes.forEach((node : IONode) =>
-        {
-            node.outputNodes.forEach((onode : IONode) =>
-            {
-                node.disconnect(onode);
-            });
-        });
-
-        this.gates.splice(this.gates.indexOf(gate), 1);
     }
 
     private mouseDown(x : number, y : number, e : MouseEvent) : void
@@ -360,6 +405,11 @@ export class Builder
 
         return ret;
     }
+
+    public serialize() : string
+    {
+
+    }
 }
 
 export class GraphicsNode
@@ -370,6 +420,7 @@ export class GraphicsNode
     public node : IONode;
     public input : boolean;
     public colorIndex : number;
+    public id : number = -1;
 
     constructor(node : IONode, isInput : boolean)
     {
@@ -422,6 +473,7 @@ export class GraphicsGate
     private nodePadding : number = 8;
     public hovered : boolean = false;
     public colorIndex : number;
+    public id : number = -1;
 
     constructor(gate : Gate)
     {
@@ -666,13 +718,13 @@ export class Toolbar
 export class BuilderContainer
 {
     public container : HTMLElement;
-    public parent : HTMLElement;
+    public parent : UI;
     public builder : Builder;
     public gateList : GateList;
     public toolbar : Toolbar;
     public overlay : Canvas;
 
-    constructor(parent : HTMLElement, resX : number, resY : number)
+    constructor(parent : UI, resX : number, resY : number)
     {
         this.parent = parent;
         this.container = document.createElement("div");
@@ -689,7 +741,7 @@ export class BuilderContainer
         this.overlay.mouse.addEventListener("move", this.mouseMove.bind(this));
         this.overlay.mouse.addEventListener("up", this.mouseUp.bind(this));
 
-        parent.appendChild(this.container);
+        parent.container.appendChild(this.container);
         this.hideOverlay();
         window.requestAnimationFrame(this.drawReq.bind(this));
 
