@@ -2,3 +2,13 @@ export function pointInRect(px : number, py : number, x : number, y : number, w 
 {
     return !(px <= x || px >= x + w || py <= y || py >= y + h);
 }
+
+export function hideElement(element)
+{
+    element.style.display = "none";
+}
+
+export function showElement(element)
+{
+    element.style.display = "";
+}

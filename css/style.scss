@@ -27,6 +27,69 @@ html, body
     height: 100%;
 }
 
+.container-ui
+{
+    width: 960px;
+    height: 540px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: top left;
+}
+
+.container-challenges
+{
+    $header-height: 10%;
+
+    background-image: url("../img/bgc.jpg");
+    background-size: cover;
+    background-position: center;
+
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+    .container-challenges-header
+    {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: $header-height;
+        background-color: black;
+
+        .challenges-title
+        {
+            color: white;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Helvetica, sans-serif;
+            font-size: 20px;
+        }
+    }
+
+    .container-challenges-gates
+    {
+        position: absolute;
+        left: 0;
+        top: $header-height;
+        width: 100%;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 8px 16px;
+
+        .gate
+        {
+            cursor: pointer;
+            display: inline-block;
+        }
+    }
+}
+
 .container-builder
 {
     $gateList-width: 10%;

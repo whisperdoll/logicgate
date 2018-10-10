@@ -1,18 +1,18 @@
 import { Canvas } from "./canvas"
-import { Gate } from "./gate"
+import { Gate, ANDGate, ORGate, XORGate, CircuitGate } from "./gate"
 import { pointInRect } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
+import { SerializedObject } from "./circuit";
+import challenges from "./challenges";
+import Storage from "./storage"
 
 export class Builder
 {
     public canvas : Canvas;
     public container : HTMLElement;
-    public gates : GraphicsGate[] = [];
+    public circuit : CircuitGate;
     public mouse : { x : number, y : number } = { x: 0, y: 0 };
-
-    public inputNodes : GraphicsNode[] = [];
-    public outputNodes : GraphicsNode[] = [];
 
     public movingGate : GraphicsGate;
     public movingOffset : { x : number, y : number };
@@ -25,9 +25,9 @@ export class Builder
     public hovering : GraphicsGate;
     private parent : BuilderContainer;
 
+    private hoverNode : IONode;
+
     public padding : number = 32;
-    private idPool : number[] = [];
-    private idCounter = 0;
 
     public static Colors : string[] = [
         "#e6194B",
@@ -54,14 +54,17 @@ export class Builder
 
     public static ColorIndex : number = 0;
 
-    constructor(parent : BuilderContainer, width : number, height : number)
+    constructor(parent : BuilderContainer, circuit : CircuitGate, width : number, height : number)
     {
         this.parent = parent;
+        this.circuit = circuit;
+
         this.canvas = new Canvas({ width, height, align:
         {
             horizontal: true,
             vertical: true
         }});
+
         this.container = document.createElement("div");
         this.container.appendChild(this.canvas.canvas);
 
@@ -78,6 +81,49 @@ export class Builder
         this.container.className = "builder";
 
         parent.container.appendChild(this.container);
+
+        this.build();
+    }
+
+    private build()
+    {
+        this.circuit.forEachGate((gate : CircuitGate) =>
+        {
+            gate.graphicsGate = new GraphicsGate(this.parent, gate);
+        });
+
+        this.circuit.forEachInput((node : IONode) =>
+        {
+            node.graphicsNode = new GraphicsNode(this.parent, node);
+        });
+
+        this.circuit.forEachOutput((node : IONode) =>
+        {
+            node.graphicsNode = new GraphicsNode(this.parent, node);
+        });
+
+        this.organizeNodes();
+    }
+
+    public die() : void
+    {
+        this.parent.container.removeChild(this.container);
+    }
+
+    public step() : void
+    {
+        this.circuit.step();
+    }
+
+    public reset() : void
+    {
+        let c = challenges[this.circuit.type];
+        let inputs = c.expects[0].inputs;
+
+        this.circuit.forEachInput((input : IONode, i : number) =>
+        {
+            input.value = inputs[i];
+        });
     }
 
     public get height() : number
@@ -90,83 +136,29 @@ export class Builder
         return this.canvas.width;
     }
 
-    public addIONode(label : string, input : boolean)
+    public addNode(label : string, input : boolean, id : number = -1)
     {
-        let n = new GraphicsNode(new IONode(label), input);
-        n.id = this.genId();
-        this[input ? "inputNodes" : "outputNodes"].push(n);
+        let n = this.circuit.addNode(new IONode(label), input, id);
+        n.graphicsNode = new GraphicsNode(this.parent, n);
         this.organizeNodes();
     }
 
-    public addInputNode(label : string)
+    public removeNode(node : GraphicsNode, isInput : boolean)
     {
-        return this.addIONode(label, true);
-    }
-
-    public addOutputNode(label : string)
-    {
-        return this.addIONode(label, false);
-    }
-
-    public removeIONode(node : GraphicsNode, input : boolean)
-    {
-        node.node.outputNodes.forEach(outputNode =>
-        {
-            node.node.disconnect(outputNode);
-        });
-
-        let list = this[input ? "inputNodes" : "outputNodes"];
-        list.splice(list.indexOf(node), 1);
-
+        this.circuit.removeNode(node.node, isInput);
         this.organizeNodes();
     }
 
-    public removeInputNode(node : GraphicsNode)
+    public addGate(gate : CircuitGate, id? : number) : GraphicsGate
     {
-        return this.removeIONode(node, true);
-    }
-
-    public removeOutputNode(node : GraphicsNode)
-    {
-        return this.removeIONode(node, false);
-    }
-
-    public addGate(gate : Gate) : GraphicsGate
-    {
-        let g = new GraphicsGate(gate);
-        g.id = this.genId();
-        this.gates.push(g);
-        return g;
+        let g = this.circuit.addGate(gate, id);
+        g.graphicsGate = new GraphicsGate(this.parent, g);
+        return g.graphicsGate;
     }
 
     public removeGate(gate : GraphicsGate) : void
     {
-        gate.gate.inputNodes.forEach((node : IONode) =>
-        {
-            node.inputNode && node.inputNode.disconnect(node);
-        });
-
-        gate.gate.outputNodes.forEach((node : IONode) =>
-        {
-            node.outputNodes.forEach((onode : IONode) =>
-            {
-                node.disconnect(onode);
-            });
-        });
-
-        this.idPool.push(gate.id);
-
-        this.gates.splice(this.gates.indexOf(gate), 1);
-    }
-
-    private genId() : number
-    {
-        if (this.idPool.length > 0)
-        {
-            return this.idPool.splice(0 ,1)[0];
-        }
-
-        return this.idCounter++;
+        return this.circuit.removeGate(gate.gate);
     }
 
     public organizeNodes()
@@ -176,22 +168,23 @@ export class Builder
 
         let padding = 16;
 
-        this.inputNodes.forEach((node : GraphicsNode, i : number) =>
+        this.circuit.forEachInput((node : IONode, i : number) =>
         {
-            node.x = this.padding + padding;
-            node.cy = this.padding + (workingHeight / (this.inputNodes.length + 1)) * (i + 1);
+            node.graphicsNode.x = this.padding + padding;
+            node.graphicsNode.cy = this.padding + (workingHeight / (this.circuit.numInputs + 1)) * (i + 1);
         });
 
-        this.outputNodes.forEach((node : GraphicsNode, i : number) =>
+        this.circuit.forEachOutput((node : IONode, i : number) =>
         {
-            node.x = this.padding + workingWidth - padding - node.size;
-            node.cy = this.padding + (workingHeight / (this.outputNodes.length + 1)) * (i + 1);
+            node.graphicsNode.x = this.padding + workingWidth - padding - node.graphicsNode.size;
+            node.graphicsNode.cy = this.padding + (workingHeight / (this.circuit.numOutputs + 1)) * (i + 1);
         });
     }
 
     public gateWithNode(node : IONode) : GraphicsGate
     {
-        return this.gates.find(gate => gate.gate.outputNodes.indexOf(node) !== -1 || gate.gate.inputNodes.indexOf(node) !== -1);
+        let g = this.circuit.gateWithNode(node);
+        return g ? g.graphicsGate : null;
     }
 
     public draw() : void
@@ -202,14 +195,19 @@ export class Builder
         this.canvas.fillRoundedRect(this.padding, this.padding,
             this.width - this.padding * 2, this.height - this.padding * 2, 20, "rgba(255,255,255,0.5)");
 
-        this.inputNodes.forEach(node => node.draw(this.canvas));
-        this.outputNodes.forEach(node => node.draw(this.canvas));
+        this.circuit.forEachInput(node => node.graphicsNode.draw(this.canvas));
+        this.circuit.forEachOutput(node => node.graphicsNode.draw(this.canvas));
 
-        this.gates.forEach(gate => gate.drawGate(this.canvas));
-        this.gates.forEach(gate => gate.drawNodes(this.canvas, false));
-        this.gates.forEach(gate => gate.drawNodes(this.canvas, true));
+        this.circuit.forEachGate(gate => gate.graphicsGate.drawGate(this.canvas));
+        this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, false));
+        this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, true));
 
         this.drawConnections();
+
+        if (this.hoverNode)
+        {
+            this.hoverNode.graphicsNode.draw(this.canvas);
+        }
 
         if (this.hovering)
         {
@@ -233,23 +231,24 @@ export class Builder
 
     public drawConnections() : void
     {
-        this.gates.forEach((gate : GraphicsGate) =>
+        this.circuit.forEachGate((gate : CircuitGate) =>
         {
-            gate.gate.outputNodes.forEach((node : IONode, i : number) =>
+            gate.forEachOutput((node : IONode, i : number) =>
             {
-                let opt = gate.nodePoint(i, false, true);
+                let opt = gate.graphicsGate.nodePoint(i, false, true);
                 
                 node.outputNodes.forEach((inputNode : IONode, j : number) =>
                 {
                     let ipt = this.nodePoint(inputNode);
-                    this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.colorIndex);
+                    this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.graphicsGate.colorIndex);
                 });
             });
         });
 
-        this.inputNodes.forEach((node : GraphicsNode) =>
+        this.circuit.forEachInput((cnode : IONode) =>
         {
-            node.node.outputNodes.forEach((inputNode : IONode, i : number) =>
+            let node = cnode.graphicsNode;
+            cnode.outputNodes.forEach((inputNode : IONode, i : number) =>
             {
                 let ipt = this.nodePoint(inputNode);
                 this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.colorIndex);
@@ -259,15 +258,19 @@ export class Builder
 
     public nodePoint(node : IONode) : { x : number, y : number }
     {
-        let match;
+        let nodeMatch : IONode;
+        let gateMatch : GraphicsGate;
+
+        window["node"] = node;
         
-        if (match = this.inputNodes.find(n => n.node === node) || this.outputNodes.find(n => n.node === node))
+        if ((nodeMatch = this.circuit.forEachInput(n => n === node)[0])
+            || (nodeMatch = this.circuit.forEachOutput(n => n === node)[0]))
         {
-            return { x: match.cx, y: match.cy };
+            return { x: nodeMatch.graphicsNode.cx, y: nodeMatch.graphicsNode.cy };
         }
-        else if (match = this.gateWithNode(node))
+        else if (gateMatch = this.gateWithNode(node))
         {
-            return match.nodePoint(match.gate.inputNodes.indexOf(node), true, true);
+            return gateMatch.nodePoint(gateMatch.gate.indexOfInput(node), true, true);
         }
         else
         {
@@ -286,7 +289,7 @@ export class Builder
         e.preventDefault();
 
         let hoveredGate = this.hoveredGate();
-        let n;
+        let n : IONode;
 
         if (hoveredGate)
         {
@@ -306,9 +309,9 @@ export class Builder
                 this.connectingOutput = hoveredGate.getConnectingOutput(y);
             }
         }
-        else if (n = this.inputNodes.find(node => node.containsPoint(x, y)))
+        else if (n = this.circuit.forEachInput(node => node.graphicsNode.containsPoint(x, y))[0])
         {
-            this.connectingNode = n;
+            this.connectingNode = n.graphicsNode;
         }
     }
 
@@ -336,8 +339,11 @@ export class Builder
         else
         {
             let hoveredGate = this.hoveredGate();
+            this.hoverNode = null;
     
-            if (hoveredGate || this.inputNodes.some(node => node.containsPoint(x, y)) || this.outputNodes.some(node => node.containsPoint(x, y)))
+            if (hoveredGate
+                || (this.hoverNode = this.circuit.forEachInput(node => node.graphicsNode.containsPoint(x, y))[0])
+                || (this.hoverNode = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0]))
             {
                 this.canvas.canvas.style.cursor = "pointer";
                 this.parent.overlay.canvas.style.cursor = "pointer";
@@ -355,7 +361,7 @@ export class Builder
         e.preventDefault();
         this.movingGate = null;
 
-        let n = null;
+        let n : IONode = null;
 
         if (this.connectingGate)
         {
@@ -364,9 +370,9 @@ export class Builder
             {
                 this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
             }
-            else if (n = this.outputNodes.find(node => node.containsPoint(x, y)))
+            else if (n = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0])
             {
-                this.connectingGate.connectNode(this.connectingOutput, n);
+                this.connectingGate.connectNode(this.connectingOutput, n.graphicsNode);
             }
         }
         else if (this.connectingNode)
@@ -374,11 +380,11 @@ export class Builder
             let h = this.hoveredGate();
             if (h)
             {
-                this.connectingNode.node.connect(h.gate.inputNodes[h.getConnectingInput(y)]);
+                this.connectingNode.node.connect(h.gate.getInput(h.getConnectingInput(y)));
             }
-            else if (n = this.outputNodes.find(node => node.containsPoint(x, y)))
+            else if (n = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0])
             {
-                this.connectingNode.node.connect(n.node);
+                this.connectingNode.node.connect(n);
             }
         }
 
@@ -393,8 +399,8 @@ export class Builder
             this.hovering.hovered = false;
         }
 
-        let gates = this.gates.filter(gate => gate.containsPoint(this.mouse.x, this.mouse.y));
-        let ret = gates[gates.length - 1] || null;
+        let gates = this.circuit.forEachGate(gate => gate.graphicsGate.containsPoint(this.mouse.x, this.mouse.y));
+        let ret = gates.length > 0 ? gates[gates.length - 1].graphicsGate : null;
 
         if (ret)
         {
@@ -406,9 +412,14 @@ export class Builder
         return ret;
     }
 
-    public serialize() : string
+    public save()
     {
-
+        challenges[this.circuit.type].solution = JSON.stringify(this.circuit.serializeCircuit());
+        Storage.set(this.circuit.type,
+        {
+            solved: challenges[this.circuit.type].solved,
+            solution: challenges[this.circuit.type].solution
+        });
     }
 }
 
@@ -418,21 +429,36 @@ export class GraphicsNode
     public y : number = 0;
     public size : number = 32;
     public node : IONode;
-    public input : boolean;
     public colorIndex : number;
-    public id : number = -1;
+    public parent : BuilderContainer;
 
-    constructor(node : IONode, isInput : boolean)
+    constructor(parent : BuilderContainer, node : IONode)
     {
+        this.parent = parent;
         this.node = node;
-        this.input = isInput;
         this.colorIndex = Builder.ColorIndex++;
+    }
+
+    public get id() : number
+    {
+        return this.node.id;
+    }
+
+    public set id(id : number)
+    {
+        this.node.id = id;
     }
 
     public draw(canvas : Canvas) : void
     {
         canvas.fillCircleInSquare(this.x, this.y, this.size, "white");
         canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
+
+        if (this.node.value !== IONode.NO_VALUE)
+        {
+            canvas.fillText(this.node.value, this.cx, this.cy, "black",
+                "middle", "center", "16px monospace");
+        }
     }
 
     public get cx() : number
@@ -463,24 +489,76 @@ export class GraphicsNode
 
 export class GraphicsGate
 {
-    public x : number = 0;
-    public y : number = 0;
     public width : number = 64;
     public height : number = 24;
     private color : string = "#fff";
-    public gate : Gate;
+    public gate : CircuitGate;
     public nodeSize : number = 12;
     private nodePadding : number = 8;
     public hovered : boolean = false;
     public colorIndex : number;
-    public id : number = -1;
+    public parent : BuilderContainer;
 
-    constructor(gate : Gate)
+    constructor(parent : BuilderContainer, gate : CircuitGate)
     {
+        this.parent = parent;
         this.gate = gate;
-        let nodes = Math.max(gate.inputNodes.length, gate.outputNodes.length);
+        let nodes = Math.max(gate.numInputs, gate.numOutputs);
         this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
         this.colorIndex = Builder.ColorIndex++;
+    }
+
+    public get x() : number
+    {
+        return this.gate.x;
+    }
+
+    public get y() : number
+    {
+        return this.gate.y;
+    }
+
+    public set x(x)
+    {
+        this.gate.x = x;
+    }
+
+    public set y(y)
+    {
+        this.gate.y = y;
+    }
+
+    public get id() : number
+    {
+        return this.gate.id;
+    }
+
+    public set id(id)
+    {
+        this.gate.id = id;
+    }
+
+    public toHTMLElement() : HTMLElement
+    {
+        let c = new Canvas({ width: this.width + this.nodeSize * 2, height: this.height + 8 });
+
+        let _x = this.x;
+        let _y = this.y;
+
+        this.x = this.nodeSize;
+        this.y = 4;
+        this.drawGate(c);
+        this.drawNodes(c, true);
+        this.drawNodes(c, false);
+
+        let container = document.createElement("div");
+        container.className = "gate";
+        container.appendChild(c.canvas);
+
+        this.x = _x;
+        this.y = _y;
+
+        return container;
     }
 
     public drawGate(canvas : Canvas) : void
@@ -495,11 +573,11 @@ export class GraphicsGate
 
     public drawNodes(canvas : Canvas, input : boolean) : void
     {
-        let nodeList = input ? this.gate.inputNodes : this.gate.outputNodes;
-        for (let i = 0; i < nodeList.length; i++)
+        let fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
+
+        fn.call(this.gate, (node, i) =>
         {
             let pt = this.nodePoint(i, input);
-            let node = nodeList[i];
 
             canvas.fillRoundedRect(
                 pt.x,
@@ -547,15 +625,15 @@ export class GraphicsGate
                     fontSize + "px monospace"
                 );
             }
-        }
+        });
     }
 
     public nodePoint(index : number, input : boolean, corrected? : boolean) : { x : number, y : number }
     {
         if (corrected === undefined) corrected = false;
         
-        let nodeList = input ? this.gate.inputNodes : this.gate.outputNodes;
-        let padding = (this.height - nodeList.length * this.nodeSize) / (nodeList.length + 1);
+        let numNodes = input ? this.gate.numInputs : this.gate.numOutputs;
+        let padding = (this.height - numNodes * this.nodeSize) / (numNodes + 1);
 
         return {
             x: this.x - (corrected ? 0 : this.nodeSize / 2) + (input ? 0 : this.width),
@@ -570,7 +648,7 @@ export class GraphicsGate
 
     public nodeIndexFromY(y : number, input : boolean) : number
     {
-        let slices = this.gate[input ? "inputNodes" : "outputNodes"].length;
+        let slices = input ? this.gate.numInputs : this.gate.numOutputs;
         let localY = y - this.y;
         let h = this.height / slices;
 
@@ -589,35 +667,36 @@ export class GraphicsGate
 
     public connect(output : number, gate : GraphicsGate, input : number) : IONode
     {
-        let srcNode = this.gate.outputNodes[output];
-        let inputNode = gate.gate.inputNodes[input];
-        let o = srcNode.connect(inputNode);
+        let o = this.gate.connect(output, gate.gate, input);
 
-        if (o.success)
+        if (o.result.success)
         {
-            return o.oustedNode;
+            return o.result.oustedNode;
         }
         else
         {
-            srcNode.disconnect(inputNode);
+            o.srcNode.disconnect(o.destNode);
             return null;
         }
     }
 
     public connectNode(output : number, node : GraphicsNode) : IONode
     {
-        let srcNode = this.gate.outputNodes[output];
-        let inputNode = node.node;
-        let o = srcNode.connect(inputNode);
+        let o = this.gate.connectNode(output, node.node);
 
-        if (o.success)
+        if (o.result.success)
         {
-            return o.oustedNode;
+            return o.result.oustedNode;
         }
         else
         {
-            srcNode.disconnect(inputNode);
+            o.srcNode.disconnect(o.destNode);
         }
+    }
+
+    public serialize() : SerializedObject
+    {
+        return this.gate.serialize();
     }
 }
 
@@ -636,26 +715,37 @@ export class GateList
         this.parent = parent;
     }
 
-    private createGateElement(gateClass : typeof Gate) : HTMLElement
+    public build(type : string)
     {
-        let g = new GraphicsGate(<Gate>(new gateClass()));
-        let c = new Canvas({ width: g.width + g.nodeSize * 2, height: g.height + 8 });
-        g.x = g.nodeSize;
-        g.y = 4;
-        g.drawGate(c);
-        g.drawNodes(c, true);
-        g.drawNodes(c, false);
+        this.element.innerHTML = "";
+        this.children = [];
 
-        let container = document.createElement("div");
-        container.className = "gate";
-        container.appendChild(c.canvas);
+        this.appendGateElement(new ANDGate());
+        this.appendGateElement(new ORGate());
+        this.appendGateElement(new XORGate());
 
-        c.mouse.addEventListener("down", (x : number, y : number, e : MouseEvent) =>
+        for (let type in challenges)
         {
-            this.spawnGate(<Gate>(new gateClass()), x, y, e);
+            let c = challenges[type];
+            if (c.solved && c.type !== type)
+            {
+                this.appendGateElement(CircuitGate.ofType(c.type));
+            }
+        }
+    }
+
+    private createGateElement(gate : CircuitGate) : HTMLElement
+    {
+        let g = new GraphicsGate(this.parent, gate.clone());
+        let e = g.toHTMLElement();
+        let c = e.firstElementChild;
+
+        new Canvas({ canvasElement: c }).mouse.addEventListener("down", (x : number, y : number, e : MouseEvent) =>
+        {
+            this.spawnGate(gate.clone(), x, y, e);
         });
         
-        return container;
+        return e;
     }
 
     private appendChild(element : HTMLElement)
@@ -664,14 +754,14 @@ export class GateList
         this.children.push(element);
     }
 
-    public appendGateElement(gateClass : typeof Gate) : void
+    public appendGateElement(gate : CircuitGate) : void
     {
-        this.appendChild(this.createGateElement(gateClass));
+        this.appendChild(this.createGateElement(gate));
     }
 
-    private spawnGate(gate : Gate, x : number, y : number, e : MouseEvent)
+    private spawnGate(gate : CircuitGate, x : number, y : number, e : MouseEvent)
     {
-        let g = this.parent.builder.addGate(gate);
+        let g = this.parent.builder.addGate(gate.clone());
         this.parent.builder.hovering = g;
         this.parent.builder.movingGate = g;
         this.parent.builder.movingOffset = { x: -g.width / 2, y: -g.height / 2 };
@@ -693,7 +783,16 @@ export class Toolbar
         parent.container.appendChild(this.container);
 
         this.makeButton("img/play.png", "Run", ()=>{});
-        this.makeButton("img/step.png", "Step", ()=>{});
+
+        this.makeButton("img/step.png", "Step", () =>
+        {
+            this.parent.builder.step();
+        });
+
+        this.makeButton("img/save.png", "Save", () =>
+        {
+            this.parent.builder.save();
+        });
     }
 
     public makeButton(imgSrc, text, onclick) : void
@@ -723,15 +822,21 @@ export class BuilderContainer
     public gateList : GateList;
     public toolbar : Toolbar;
     public overlay : Canvas;
+    
+    public resX : number;
+    public resY : number;
 
     constructor(parent : UI, resX : number, resY : number)
     {
         this.parent = parent;
         this.container = document.createElement("div");
         this.container.className = "container-builder";
-        this.builder = new Builder(this, resX, resY);
+        this.builder = null;
         this.gateList = new GateList(this);
         this.toolbar = new Toolbar(this);
+
+        this.resX = resX;
+        this.resY = resY;
 
         this.overlay = new Canvas({ width: resX * (10/9), height: resY });
         this.overlay.canvas.className = "overlay";
@@ -745,8 +850,15 @@ export class BuilderContainer
         this.hideOverlay();
         window.requestAnimationFrame(this.drawReq.bind(this));
 
-        window.addEventListener("resize", this.resize.bind(this));
-        this.resize();
+        this.parent.container.appendChild(this.container);
+    }
+
+    public editGate(gate : CircuitGate) : void
+    {
+        this.builder && this.builder.die();
+
+        this.builder = new Builder(this, gate.clone(), this.resX, this.resY);
+        this.gateList.build(gate.type);
     }
 
     public showOverlay() : void
@@ -770,6 +882,11 @@ export class BuilderContainer
             this.builder.removeGate(gate);
         }
 
+        if (y > this.resY)
+        {
+            gate.y = this.resY - gate.height;
+        }
+
         this.hideOverlay();
     }
 
@@ -780,6 +897,8 @@ export class BuilderContainer
 
     public draw()
     {
+        if (!this.builder) return;
+
         this.overlay.clear();
 
         if (this.builder.movingGate)
@@ -808,19 +927,5 @@ export class BuilderContainer
     public get innerSize() : { width : number, height : number }
     {
         return { width: this.container.offsetWidth, height: this.container.offsetHeight };
-    }
-
-    public resize() : void
-    {
-        let psize = this.parent.getBoundingClientRect();
-        let w = psize.width;
-        let h = psize.height;
-
-        let size = this.innerSize;
-        let scaleX = w / size.width;
-        let scaleY = h / size.height;
-
-        this.container.style.transform = "scale(" + scaleX + "," + scaleY + ")";
-        //this.overlay.canvas.style.transform = this.container.style.transform;
     }
 }

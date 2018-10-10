@@ -13,6 +13,56 @@ html, body {
   height: 100%;
 }
 
+.container-ui {
+  width: 960px;
+  height: 540px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+
+.container-challenges {
+  background-image: url("../img/bgc.jpg");
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+.container-challenges .container-challenges-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 10%;
+  background-color: black;
+}
+.container-challenges .container-challenges-header .challenges-title {
+  color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: Helvetica, sans-serif;
+  font-size: 20px;
+}
+.container-challenges .container-challenges-gates {
+  position: absolute;
+  left: 0;
+  top: 10%;
+  width: 100%;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  padding: 8px 16px;
+}
+.container-challenges .container-challenges-gates .gate {
+  cursor: pointer;
+  display: inline-block;
+}
+
 .container-builder {
   width: 960px;
   height: 540px;

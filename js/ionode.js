@@ -4,8 +4,11 @@ define(["require", "exports"], function (require, exports) {
     var IONode = (function () {
         function IONode(label) {
             this.inputNode = null;
+            this.graphicsNode = null;
+            this.id = -1;
+            this.parentGate = null;
             this.label = label;
-            this._value = -1;
+            this._value = IONode.NO_VALUE;
             this.outputNodes = [];
         }
         Object.defineProperty(IONode.prototype, "value", {
@@ -13,14 +16,18 @@ define(["require", "exports"], function (require, exports) {
                 return this._value;
             },
             set: function (value) {
-                var _this = this;
                 this._value = value & 1;
                 this.onvalueset && this.onvalueset(this._value);
-                this.outputNodes.forEach(function (node) { return node.value = _this._value; });
             },
             enumerable: true,
             configurable: true
         });
+        IONode.prototype.propagate = function () {
+            var _this = this;
+            if (this.value === IONode.NO_VALUE)
+                return;
+            this.outputNodes.forEach(function (node) { return node.value = _this._value; });
+        };
         IONode.prototype.connect = function (node) {
             var ret = {
                 oustedNode: null,
@@ -43,6 +50,26 @@ define(["require", "exports"], function (require, exports) {
                 this.outputNodes.splice(i, 1);
                 node.inputNode = null;
             }
+        };
+        IONode.prototype.serialize = function (isInput) {
+            var ret = {
+                type: isInput ? "inputNode" : "outputNode",
+                id: this.id,
+                label: this.label,
+                x: 0,
+                y: 0,
+                outputConnections: []
+            };
+            this.outputNodes.forEach(function (outputNode, oi) {
+                var ogate = outputNode.parentGate;
+                var o = {
+                    outputIndex: oi,
+                    connectingToId: ogate.id,
+                    connectingToInputIndex: ogate.indexOfInput(outputNode)
+                };
+                ret.outputConnections.push(o);
+            });
+            return ret;
         };
         return IONode;
     }());

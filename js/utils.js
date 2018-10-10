@@ -5,4 +5,12 @@ define(["require", "exports"], function (require, exports) {
         return !(px <= x || px >= x + w || py <= y || py >= y + h);
     }
     exports.pointInRect = pointInRect;
+    function hideElement(element) {
+        element.style.display = "none";
+    }
+    exports.hideElement = hideElement;
+    function showElement(element) {
+        element.style.display = "";
+    }
+    exports.showElement = showElement;
 });
