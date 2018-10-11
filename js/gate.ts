@@ -44,8 +44,6 @@ export function loadCircuits(ui : UI)
             Storage.set(type, saved);
         }
 
-        console.log(JSON.parse(saved.solution));
-
         c.solution = saved.solution;
         c.solved = saved.solved;
 
@@ -281,6 +279,24 @@ export class CircuitGate extends Gate
     public removeGate(gate : CircuitGate) : void
     {
         let g = this.gates.splice(this.gates.indexOf(gate), 1)[0];
+
+        g.outputNodes.forEach(onode =>
+        {
+            while (onode.outputNodes.length > 0) {
+                let inode = onode.outputNodes[0];
+                onode.disconnect(inode);
+                inode.value = IONode.NO_VALUE;
+                //inode.propagate();
+            }
+        });
+
+        g.inputNodes.forEach(inode =>
+        {
+            if (inode.inputNode)
+            {
+                inode.inputNode.disconnect(inode);
+            }
+        });
     }
 
     public forEachGate(fn : Function) : CircuitGate[]
@@ -360,7 +376,7 @@ export class CircuitGate extends Gate
                 let cid : number;
                 let cind : number;
 
-                if (node.graphicsNode)
+                if (node.parentGate.id === -1)
                 {
                     cid = node.id;
                     cind = -1;
@@ -529,6 +545,11 @@ export class OpGate extends CircuitGate
             && this.inputNodes[1].value !== IONode.NO_VALUE)
         {
             this.outputNodes[0].value = this.gateFn();
+        }
+        else
+        {
+            this.outputNodes[0].value = IONode.NO_VALUE;
+            this.outputNodes[0].propagate();
         }
     }
 

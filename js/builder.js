@@ -23,6 +23,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.container.className = "builder";
             parent.container.appendChild(this.container);
             this.build();
+            this.reset();
         }
         Builder.prototype.build = function () {
             var _this = this;
@@ -105,12 +106,12 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.canvas.clear();
             this.canvas.fill("rgba(0,0,0,0.5)");
             this.canvas.fillRoundedRect(this.padding, this.padding, this.width - this.padding * 2, this.height - this.padding * 2, 20, "rgba(255,255,255,0.5)");
-            this.circuit.forEachInput(function (node) { return node.graphicsNode.draw(_this.canvas); });
-            this.circuit.forEachOutput(function (node) { return node.graphicsNode.draw(_this.canvas); });
+            this.drawConnections();
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawGate(_this.canvas); });
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawNodes(_this.canvas, false); });
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawNodes(_this.canvas, true); });
-            this.drawConnections();
+            this.circuit.forEachInput(function (node) { return node.graphicsNode.draw(_this.canvas); });
+            this.circuit.forEachOutput(function (node) { return node.graphicsNode.draw(_this.canvas); });
             if (this.hoverNode) {
                 this.hoverNode.graphicsNode.draw(this.canvas);
             }
@@ -121,10 +122,10 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             }
             if (this.connectingGate) {
                 var opt = this.connectingGate.nodePoint(this.connectingOutput, false, true);
-                this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.colorIndex);
+                this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.gate.getOutput(this.connectingOutput).color);
             }
             else if (this.connectingNode) {
-                this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.colorIndex);
+                this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.node.color);
             }
         };
         Builder.prototype.drawConnections = function () {
@@ -134,7 +135,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                     var opt = gate.graphicsGate.nodePoint(i, false, true);
                     node.outputNodes.forEach(function (inputNode, j) {
                         var ipt = _this.nodePoint(inputNode);
-                        _this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.graphicsGate.colorIndex);
+                        _this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.getOutput(i).color);
                     });
                 });
             });
@@ -142,7 +143,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 var node = cnode.graphicsNode;
                 cnode.outputNodes.forEach(function (inputNode, i) {
                     var ipt = _this.nodePoint(inputNode);
-                    _this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.colorIndex);
+                    _this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.node.color);
                 });
             });
         };
@@ -161,8 +162,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 throw "cant find the node ://";
             }
         };
-        Builder.prototype.drawLine = function (x1, y1, x2, y2, colorIndex) {
-            this.canvas.drawLine(x1, y1, x2, y2, Builder.Colors[colorIndex], 2);
+        Builder.prototype.drawLine = function (x1, y1, x2, y2, color) {
+            this.canvas.drawLine(x1, y1, x2, y2, color, 2);
         };
         Builder.prototype.mouseDown = function (x, y, e) {
             e.preventDefault();
@@ -305,7 +306,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             configurable: true
         });
         GraphicsNode.prototype.draw = function (canvas) {
-            canvas.fillCircleInSquare(this.x, this.y, this.size, "white");
+            canvas.fillCircleInSquare(this.x, this.y, this.size, this.node.color);
             canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
             if (this.node.value !== ionode_1.IONode.NO_VALUE) {
                 canvas.fillText(this.node.value, this.cx, this.cy, "black", "middle", "center", "16px monospace");
@@ -407,7 +408,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             var fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
             fn.call(this.gate, function (node, i) {
                 var pt = _this.nodePoint(i, input);
-                canvas.fillRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 5, _this.color, false);
+                canvas.fillRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 5, node.color, false);
                 canvas.drawRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 3, "black", 2, false);
                 if (_this.hovered) {
                     var fontSize = 14;
@@ -523,9 +524,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.container.className = "toolbar";
             this.parent = parent;
             parent.container.appendChild(this.container);
-            this.makeButton("img/play.png", "Run", function () { });
-            this.makeButton("img/step.png", "Step", function () {
-                _this.parent.builder.step();
+            this.makeButton("img/play.png", "Test", function () {
+                alert("hey i haven't done this yet ... real sorry about that");
             });
             this.makeButton("img/save.png", "Save", function () {
                 _this.parent.builder.save();

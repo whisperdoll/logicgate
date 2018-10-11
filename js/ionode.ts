@@ -10,7 +10,9 @@ export class IONode
     public outputNodes : IONode[];
     public inputNode : IONode = null;
 
-    public static NO_VALUE : -1;
+    public static NO_VALUE : number = -1;
+    public static COLOR_0 : string = "#8888FF";
+    public static COLOR_1 : string = "#FF8844";
 
     public graphicsNode : GraphicsNode = null;
     public id : number = -1;
@@ -23,6 +25,16 @@ export class IONode
         this.outputNodes = [];
     }
 
+    public get color() : string
+    {
+        switch (this.value)
+        {
+            case 0: return IONode.COLOR_0;
+            case 1: return IONode.COLOR_1;
+            default: return "white";
+        }
+    }
+
     public get value() : number
     {
         return this._value;
@@ -30,13 +42,14 @@ export class IONode
 
     public set value(value : number)
     {
-        this._value = value & 1;
+        this._value = value;
         this.onvalueset && this.onvalueset(this._value);
+        this.propagate();
     }
 
     public propagate() : void
     {
-        if (this.value === IONode.NO_VALUE) return;
+        //if (this.value === IONode.NO_VALUE) return;
 
         this.outputNodes.forEach(node => node.value = this._value);
     }
@@ -57,6 +70,8 @@ export class IONode
             {
                 node.inputNode.disconnect(node);
             }
+
+            this.propagate();
 
             node.inputNode = this;
             ret.success = true;
@@ -86,18 +101,31 @@ export class IONode
             outputConnections: []
         };
 
-        this.outputNodes.forEach((outputNode, oi) =>
+        this.outputNodes.forEach((node, oi) =>
         {
-                let ogate = outputNode.parentGate;
-    
-                let o =
-                {
-                    outputIndex: oi,
-                    connectingToId: ogate.id,
-                    connectingToInputIndex: ogate.indexOfInput(outputNode)
-                };
-    
-                ret.outputConnections.push(o);
+            let cid : number;
+            let cind : number;
+
+            if (node.parentGate.id === -1)
+            {
+                cid = node.id;
+                cind = -1;
+            }
+            else
+            {
+                let ogate = node.parentGate;
+                cid = ogate.id;
+                cind = ogate.indexOfInput(node);
+            }
+
+            let o =
+            {
+                outputIndex: oi,
+                connectingToId: cid,
+                connectingToInputIndex: cind
+            };
+
+            ret.outputConnections.push(o);
         });
 
         return ret;

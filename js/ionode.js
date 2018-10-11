@@ -11,21 +11,31 @@ define(["require", "exports"], function (require, exports) {
             this._value = IONode.NO_VALUE;
             this.outputNodes = [];
         }
+        Object.defineProperty(IONode.prototype, "color", {
+            get: function () {
+                switch (this.value) {
+                    case 0: return IONode.COLOR_0;
+                    case 1: return IONode.COLOR_1;
+                    default: return "white";
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(IONode.prototype, "value", {
             get: function () {
                 return this._value;
             },
             set: function (value) {
-                this._value = value & 1;
+                this._value = value;
                 this.onvalueset && this.onvalueset(this._value);
+                this.propagate();
             },
             enumerable: true,
             configurable: true
         });
         IONode.prototype.propagate = function () {
             var _this = this;
-            if (this.value === IONode.NO_VALUE)
-                return;
             this.outputNodes.forEach(function (node) { return node.value = _this._value; });
         };
         IONode.prototype.connect = function (node) {
@@ -39,6 +49,7 @@ define(["require", "exports"], function (require, exports) {
                 if (node.inputNode) {
                     node.inputNode.disconnect(node);
                 }
+                this.propagate();
                 node.inputNode = this;
                 ret.success = true;
             }
@@ -60,17 +71,30 @@ define(["require", "exports"], function (require, exports) {
                 y: 0,
                 outputConnections: []
             };
-            this.outputNodes.forEach(function (outputNode, oi) {
-                var ogate = outputNode.parentGate;
+            this.outputNodes.forEach(function (node, oi) {
+                var cid;
+                var cind;
+                if (node.parentGate.id === -1) {
+                    cid = node.id;
+                    cind = -1;
+                }
+                else {
+                    var ogate = node.parentGate;
+                    cid = ogate.id;
+                    cind = ogate.indexOfInput(node);
+                }
                 var o = {
                     outputIndex: oi,
-                    connectingToId: ogate.id,
-                    connectingToInputIndex: ogate.indexOfInput(outputNode)
+                    connectingToId: cid,
+                    connectingToInputIndex: cind
                 };
                 ret.outputConnections.push(o);
             });
             return ret;
         };
+        IONode.NO_VALUE = -1;
+        IONode.COLOR_0 = "#8888FF";
+        IONode.COLOR_1 = "#FF8844";
         return IONode;
     }());
     exports.IONode = IONode;

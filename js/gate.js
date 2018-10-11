@@ -38,7 +38,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
                 };
                 storage_1.default.set(type, saved);
             }
-            console.log(JSON.parse(saved.solution));
             c.solution = saved.solution;
             c.solved = saved.solved;
             ui.challengeContainer.addChallenge(c);
@@ -198,6 +197,18 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         };
         CircuitGate.prototype.removeGate = function (gate) {
             var g = this.gates.splice(this.gates.indexOf(gate), 1)[0];
+            g.outputNodes.forEach(function (onode) {
+                while (onode.outputNodes.length > 0) {
+                    var inode = onode.outputNodes[0];
+                    onode.disconnect(inode);
+                    inode.value = ionode_1.IONode.NO_VALUE;
+                }
+            });
+            g.inputNodes.forEach(function (inode) {
+                if (inode.inputNode) {
+                    inode.inputNode.disconnect(inode);
+                }
+            });
         };
         CircuitGate.prototype.forEachGate = function (fn) {
             var ret = [];
@@ -251,7 +262,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
                 outputNode.outputNodes.forEach(function (node, i) {
                     var cid;
                     var cind;
-                    if (node.graphicsNode) {
+                    if (node.parentGate.id === -1) {
                         cid = node.id;
                         cind = -1;
                     }
@@ -372,6 +383,10 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
             if (this.inputNodes[0].value !== ionode_1.IONode.NO_VALUE
                 && this.inputNodes[1].value !== ionode_1.IONode.NO_VALUE) {
                 this.outputNodes[0].value = this.gateFn();
+            }
+            else {
+                this.outputNodes[0].value = ionode_1.IONode.NO_VALUE;
+                this.outputNodes[0].propagate();
             }
         };
         OpGate.prototype.gateFn = function () {

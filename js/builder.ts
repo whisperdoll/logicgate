@@ -83,6 +83,7 @@ export class Builder
         parent.container.appendChild(this.container);
 
         this.build();
+        this.reset();
     }
 
     private build()
@@ -195,14 +196,14 @@ export class Builder
         this.canvas.fillRoundedRect(this.padding, this.padding,
             this.width - this.padding * 2, this.height - this.padding * 2, 20, "rgba(255,255,255,0.5)");
 
-        this.circuit.forEachInput(node => node.graphicsNode.draw(this.canvas));
-        this.circuit.forEachOutput(node => node.graphicsNode.draw(this.canvas));
+        this.drawConnections();
 
         this.circuit.forEachGate(gate => gate.graphicsGate.drawGate(this.canvas));
         this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, false));
         this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, true));
 
-        this.drawConnections();
+        this.circuit.forEachInput(node => node.graphicsNode.draw(this.canvas));
+        this.circuit.forEachOutput(node => node.graphicsNode.draw(this.canvas));
 
         if (this.hoverNode)
         {
@@ -221,11 +222,11 @@ export class Builder
         if (this.connectingGate)
         {
             let opt = this.connectingGate.nodePoint(this.connectingOutput, false, true);
-            this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.colorIndex);
+            this.drawLine(opt.x, opt.y, this.mouse.x, this.mouse.y, this.connectingGate.gate.getOutput(this.connectingOutput).color);
         }
         else if (this.connectingNode)
         {
-            this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.colorIndex);
+            this.drawLine(this.connectingNode.cx, this.connectingNode.cy, this.mouse.x, this.mouse.y, this.connectingNode.node.color);
         }
     }
 
@@ -240,7 +241,7 @@ export class Builder
                 node.outputNodes.forEach((inputNode : IONode, j : number) =>
                 {
                     let ipt = this.nodePoint(inputNode);
-                    this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.graphicsGate.colorIndex);
+                    this.drawLine(opt.x, opt.y, ipt.x, ipt.y, gate.getOutput(i).color);
                 });
             });
         });
@@ -251,7 +252,7 @@ export class Builder
             cnode.outputNodes.forEach((inputNode : IONode, i : number) =>
             {
                 let ipt = this.nodePoint(inputNode);
-                this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.colorIndex);
+                this.drawLine(node.cx, node.cy, ipt.x, ipt.y, node.node.color);
             });
         });
     }
@@ -279,9 +280,9 @@ export class Builder
         }
     }
 
-    public drawLine(x1, y1, x2, y2, colorIndex)
+    public drawLine(x1, y1, x2, y2, color : string)
     {
-        this.canvas.drawLine(x1, y1, x2, y2, Builder.Colors[colorIndex], 2);
+        this.canvas.drawLine(x1, y1, x2, y2, color, 2);
     }
 
     private mouseDown(x : number, y : number, e : MouseEvent) : void
@@ -451,7 +452,7 @@ export class GraphicsNode
 
     public draw(canvas : Canvas) : void
     {
-        canvas.fillCircleInSquare(this.x, this.y, this.size, "white");
+        canvas.fillCircleInSquare(this.x, this.y, this.size, this.node.color);
         canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
 
         if (this.node.value !== IONode.NO_VALUE)
@@ -585,7 +586,7 @@ export class GraphicsGate
                 this.nodeSize,
                 this.nodeSize,
                 5,
-                this.color,
+                node.color,
                 false
             );
 
@@ -782,11 +783,9 @@ export class Toolbar
         this.parent = parent;
         parent.container.appendChild(this.container);
 
-        this.makeButton("img/play.png", "Run", ()=>{});
-
-        this.makeButton("img/step.png", "Step", () =>
+        this.makeButton("img/play.png", "Test", ()=>
         {
-            this.parent.builder.step();
+            alert("hey i haven't done this yet ... real sorry about that");
         });
 
         this.makeButton("img/save.png", "Save", () =>
