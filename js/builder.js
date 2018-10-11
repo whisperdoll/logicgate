@@ -184,7 +184,12 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 }
             }
             else if (n = this.circuit.forEachInput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0]) {
-                this.connectingNode = n.graphicsNode;
+                if (e.button === 0) {
+                    n.value = n.value ^ 1;
+                }
+                else if (e.button === 2) {
+                    this.connectingNode = n.graphicsNode;
+                }
             }
         };
         Builder.prototype.mouseMove = function (x, y, mouseDown, lx, ly, ox, oy, e) {

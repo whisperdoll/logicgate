@@ -312,7 +312,14 @@ export class Builder
         }
         else if (n = this.circuit.forEachInput(node => node.graphicsNode.containsPoint(x, y))[0])
         {
-            this.connectingNode = n.graphicsNode;
+            if (e.button === 0)
+            {
+                n.value = n.value ^ 1;
+            }
+            else if (e.button === 2)
+            {
+                this.connectingNode = n.graphicsNode;
+            }
         }
     }
 
