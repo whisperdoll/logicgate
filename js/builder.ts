@@ -429,6 +429,40 @@ export class Builder
             solution: challenges[this.circuit.type].solution
         });
     }
+
+    public test()
+    {
+        let expects = challenges[this.circuit.type].expects;
+
+        expects.forEach(e =>
+        {
+            e.inputs.forEach((value : number, i : number) =>
+            {
+                this.circuit.getInput(i).value = value;
+            });
+            
+            let passed = true;
+
+            e.outputs.forEach((value : number, i : number) =>
+            {
+                if (this.circuit.getOutput(i).value !== value)
+                {
+                    passed = false;
+                }
+            });
+
+            if (passed)
+            {
+                console.log("passed " + JSON.stringify(e.inputs));
+            }
+            else
+            {
+                console.log("failed " + JSON.stringify(e.inputs));
+            }
+        });
+
+
+    }
 }
 
 export class GraphicsNode
@@ -792,7 +826,7 @@ export class Toolbar
 
         this.makeButton("img/play.png", "Test", ()=>
         {
-            alert("hey i haven't done this yet ... real sorry about that");
+            this.parent.builder.test();
         });
 
         this.makeButton("img/save.png", "Save", () =>

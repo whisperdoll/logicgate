@@ -10,7 +10,7 @@ define(["require", "exports"], function (require, exports) {
             outputs: ["S", "C"],
             expects: [
                 {
-                    inputs: [0, 1],
+                    inputs: [0, 0],
                     outputs: [0, 0]
                 },
                 {

@@ -265,6 +265,27 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 solution: challenges_1.default[this.circuit.type].solution
             });
         };
+        Builder.prototype.test = function () {
+            var _this = this;
+            var expects = challenges_1.default[this.circuit.type].expects;
+            expects.forEach(function (e) {
+                e.inputs.forEach(function (value, i) {
+                    _this.circuit.getInput(i).value = value;
+                });
+                var passed = true;
+                e.outputs.forEach(function (value, i) {
+                    if (_this.circuit.getOutput(i).value !== value) {
+                        passed = false;
+                    }
+                });
+                if (passed) {
+                    console.log("passed " + JSON.stringify(e.inputs));
+                }
+                else {
+                    console.log("failed " + JSON.stringify(e.inputs));
+                }
+            });
+        };
         Builder.Colors = [
             "#e6194B",
             "#3cb44b",
@@ -530,7 +551,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.parent = parent;
             parent.container.appendChild(this.container);
             this.makeButton("img/play.png", "Test", function () {
-                alert("hey i haven't done this yet ... real sorry about that");
+                _this.parent.builder.test();
             });
             this.makeButton("img/save.png", "Save", function () {
                 _this.parent.builder.save();
