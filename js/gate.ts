@@ -192,6 +192,11 @@ export class Gate
         return ret;
     }
 
+    public forEachNode(fn : Function) : IONode[]
+    {
+        return this.forEachInput(fn).concat(this.forEachOutput(fn));
+    }
+
     protected getIdList() : number[]
     {
         let ret = [];

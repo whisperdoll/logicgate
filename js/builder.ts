@@ -93,12 +93,7 @@ export class Builder
             gate.graphicsGate = new GraphicsGate(this.parent, gate);
         });
 
-        this.circuit.forEachInput((node : IONode) =>
-        {
-            node.graphicsNode = new GraphicsNode(this.parent, node);
-        });
-
-        this.circuit.forEachOutput((node : IONode) =>
+        this.circuit.forEachNode((node : IONode) =>
         {
             node.graphicsNode = new GraphicsNode(this.parent, node);
         });
@@ -202,8 +197,7 @@ export class Builder
         this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, false));
         this.circuit.forEachGate(gate => gate.graphicsGate.drawNodes(this.canvas, true));
 
-        this.circuit.forEachInput(node => node.graphicsNode.draw(this.canvas));
-        this.circuit.forEachOutput(node => node.graphicsNode.draw(this.canvas));
+        this.circuit.forEachNode(node => node.graphicsNode.draw(this.canvas));
 
         if (this.hoverNode)
         {
@@ -264,8 +258,7 @@ export class Builder
 
         window["node"] = node;
         
-        if ((nodeMatch = this.circuit.forEachInput(n => n === node)[0])
-            || (nodeMatch = this.circuit.forEachOutput(n => n === node)[0]))
+        if (nodeMatch = this.circuit.forEachNode(n => n === node)[0])
         {
             return { x: nodeMatch.graphicsNode.cx, y: nodeMatch.graphicsNode.cy };
         }
@@ -350,8 +343,8 @@ export class Builder
             this.hoverNode = null;
     
             if (hoveredGate
-                || (this.hoverNode = this.circuit.forEachInput(node => node.graphicsNode.containsPoint(x, y))[0])
-                || (this.hoverNode = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0]))
+                || (this.hoverNode = this.circuit.forEachNode(node => 
+                        node.graphicsNode.containsPoint(x, y))[0]))
             {
                 this.canvas.canvas.style.cursor = "pointer";
                 this.parent.overlay.canvas.style.cursor = "pointer";
