@@ -140,6 +140,9 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
             });
             return ret;
         };
+        Gate.prototype.forEachNode = function (fn) {
+            return this.forEachInput(fn).concat(this.forEachOutput(fn));
+        };
         Gate.prototype.getIdList = function () {
             var ret = [];
             this.inputNodes.forEach(function (node) { return ret.push(node.id); });

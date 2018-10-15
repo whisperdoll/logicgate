@@ -23,11 +23,12 @@ define(["require", "exports"], function (require, exports) {
                 },
                 {
                     inputs: [1, 1],
-                    outputs: [1, 1]
+                    outputs: [0, 1]
                 }
             ],
             solution: "",
-            solved: false
+            solved: false,
+            description: "Outputs the sum and carry of <b>A</b> and <b>B</b>.<br>Carry is set if the sum rolls over."
         }
     };
     exports.default = challenges;

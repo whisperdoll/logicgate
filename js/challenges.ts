@@ -3,10 +3,16 @@ export interface ChallengeObject {
     label : string,
     inputs : string[],
     outputs : string[],
-    expects : { inputs : number[], outputs : number[] }[],
+    expects : ChallengeExpectation[],
     solution : string,
-    solved : boolean
+    solved : boolean,
+    description: string
 };
+
+export interface ChallengeExpectation {
+    inputs: number[];
+    outputs: number[];
+}
 
 let challenges : { [ type : string ] : ChallengeObject } =
 {
@@ -30,11 +36,12 @@ let challenges : { [ type : string ] : ChallengeObject } =
             },
             {
                 inputs: [ 1, 1 ],
-                outputs: [ 1, 1 ]
+                outputs: [ 0, 1 ]
             }
         ],
         solution: "",
-        solved: false
+        solved: false,
+        description: "Outputs the sum and carry of <b>A</b> and <b>B</b>.<br>Carry is set if the sum rolls over."
     }
 };
 

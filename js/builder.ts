@@ -1,10 +1,10 @@
 import { Canvas } from "./canvas"
 import { Gate, ANDGate, ORGate, XORGate, CircuitGate } from "./gate"
-import { pointInRect } from "./utils"
+import { pointInRect, hideElement, showElement } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
 import { SerializedObject } from "./circuit";
-import challenges from "./challenges";
+import challenges, { ChallengeExpectation } from "./challenges";
 import Storage from "./storage"
 
 export class Builder
@@ -23,7 +23,9 @@ export class Builder
     private connectingNode : GraphicsNode;
 
     public hovering : GraphicsGate;
-    private parent : BuilderContainer;
+
+    public parent : BuilderContainer;
+    public gateInfoWidget : GateInfoWidget;
 
     private hoverNode : IONode;
 
@@ -81,6 +83,7 @@ export class Builder
         this.container.className = "builder";
 
         parent.container.appendChild(this.container);
+        this.gateInfoWidget = new GateInfoWidget(this);
 
         this.build();
         this.reset();
@@ -606,8 +609,10 @@ export class GraphicsGate
         canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
     }
 
-    public drawNodes(canvas : Canvas, input : boolean) : void
+    public drawNodes(canvas : Canvas, input : boolean, drawLabels? : boolean) : void
     {
+        if (drawLabels === undefined) drawLabels = this.hovered;
+
         let fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
 
         fn.call(this.gate, (node, i) =>
@@ -635,7 +640,7 @@ export class GraphicsGate
                 false
             );
 
-            if (this.hovered)
+            if (drawLabels)
             {
                 let fontSize = 14;
                 let fontSize2 = fontSize + 2;
@@ -826,6 +831,11 @@ export class Toolbar
         {
             this.parent.builder.save();
         });
+
+        this.makeButton("img/info.png", "Info", () =>
+        {
+            this.parent.builder.gateInfoWidget.show();
+        });
     }
 
     public makeButton(imgSrc, text, onclick) : void
@@ -960,5 +970,113 @@ export class BuilderContainer
     public get innerSize() : { width : number, height : number }
     {
         return { width: this.container.offsetWidth, height: this.container.offsetHeight };
+    }
+}
+
+export class GatePanelWidget
+{
+    public parent : Builder;
+    public container : HTMLElement;
+    public panelContainer : HTMLElement;
+    public descriptionContainer : HTMLElement;
+    public okButton : HTMLElement;
+
+    constructor(parent : Builder)
+    {
+        this.parent = parent;
+
+        this.container = document.createElement("div");
+        this.container.className = "gateInfoWidget";
+        this.container.onclick = this.hide.bind(this);
+
+        this.panelContainer = document.createElement("div");
+        this.panelContainer.className = "panelList";
+        this.panelContainer.onclick = e => e.stopPropagation();
+        this.container.appendChild(this.panelContainer);
+
+        this.descriptionContainer = document.createElement("div");
+        this.descriptionContainer.className = "description";
+        this.panelContainer.appendChild(this.descriptionContainer);
+
+        this.okButton = document.createElement("button");
+        this.okButton.className = "close";
+        this.okButton.innerText = "OK";
+        this.okButton.onclick = this.hide.bind(this);
+        this.panelContainer.appendChild(this.okButton);
+
+        this.parent.parent.container.appendChild(this.container);
+    }
+
+    public hide() : void
+    {
+        hideElement(this.container);
+    }
+
+    public show() : void
+    {
+        showElement(this.container);
+    }
+
+    public addPanel(e : ChallengeExpectation)
+    {
+        this.panelContainer.appendChild(this.makePanel(this.parent.circuit, e.inputs, e.outputs));
+    }
+
+    private makePanel(gate : CircuitGate, inputs? : number[], outputs? : number[]) : HTMLElement
+    {
+        gate = gate.clone();
+        
+        if (inputs)
+        {
+            gate.forEachInput((node : IONode, i : number) => node.value = inputs[i]);
+        }
+        
+        if (outputs)
+        {
+            gate.forEachOutput((node : IONode, i : number) => node.value = outputs[i]);
+        }
+        
+        let gg = gate.graphicsGate || new GraphicsGate(this.parent.parent, gate);
+        let c = new Canvas({ width: gg.width * 4, height: gg.height});
+        gg.y = 0;
+        gg.x = gg.width * 1.5;
+
+        gg.drawGate(c);
+        gg.drawNodes(c, true, true);
+        gg.drawNodes(c, false, true);
+
+        let ret = document.createElement("div");
+        ret.className = "panel";
+        ret.appendChild(c.canvas);
+
+        return ret;
+    }
+}
+
+export class GateInfoWidget extends GatePanelWidget
+{
+    constructor(parent : Builder)
+    {
+        super(parent);
+
+        let c = challenges[this.parent.circuit.type];
+        this.descriptionContainer.innerHTML = c.description;
+
+        c.expects.forEach((e, i) =>
+        {
+            this.addPanel(e);
+        });
+
+        //hideElement(this.container);
+    }
+}
+
+export class GateErrorWidget extends GatePanelWidget
+{
+    constructor(parent : Builder)
+    {
+        super(parent);
+
+        /// doo it
     }
 }

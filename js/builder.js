@@ -22,6 +22,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             };
             this.container.className = "builder";
             parent.container.appendChild(this.container);
+            this.gateInfoWidget = new GateInfoWidget(this);
             this.build();
             this.reset();
         }
@@ -30,10 +31,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.circuit.forEachGate(function (gate) {
                 gate.graphicsGate = new GraphicsGate(_this.parent, gate);
             });
-            this.circuit.forEachInput(function (node) {
-                node.graphicsNode = new GraphicsNode(_this.parent, node);
-            });
-            this.circuit.forEachOutput(function (node) {
+            this.circuit.forEachNode(function (node) {
                 node.graphicsNode = new GraphicsNode(_this.parent, node);
             });
             this.organizeNodes();
@@ -110,8 +108,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawGate(_this.canvas); });
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawNodes(_this.canvas, false); });
             this.circuit.forEachGate(function (gate) { return gate.graphicsGate.drawNodes(_this.canvas, true); });
-            this.circuit.forEachInput(function (node) { return node.graphicsNode.draw(_this.canvas); });
-            this.circuit.forEachOutput(function (node) { return node.graphicsNode.draw(_this.canvas); });
+            this.circuit.forEachNode(function (node) { return node.graphicsNode.draw(_this.canvas); });
             if (this.hoverNode) {
                 this.hoverNode.graphicsNode.draw(this.canvas);
             }
@@ -151,8 +148,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             var nodeMatch;
             var gateMatch;
             window["node"] = node;
-            if ((nodeMatch = this.circuit.forEachInput(function (n) { return n === node; })[0])
-                || (nodeMatch = this.circuit.forEachOutput(function (n) { return n === node; })[0])) {
+            if (nodeMatch = this.circuit.forEachNode(function (n) { return n === node; })[0]) {
                 return { x: nodeMatch.graphicsNode.cx, y: nodeMatch.graphicsNode.cy };
             }
             else if (gateMatch = this.gateWithNode(node)) {
@@ -209,8 +205,9 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 var hoveredGate = this.hoveredGate();
                 this.hoverNode = null;
                 if (hoveredGate
-                    || (this.hoverNode = this.circuit.forEachInput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0])
-                    || (this.hoverNode = this.circuit.forEachOutput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0])) {
+                    || (this.hoverNode = this.circuit.forEachNode(function (node) {
+                        return node.graphicsNode.containsPoint(x, y);
+                    })[0])) {
                     this.canvas.canvas.style.cursor = "pointer";
                     this.parent.overlay.canvas.style.cursor = "pointer";
                 }
@@ -429,14 +426,16 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "black", 2, false);
             canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
         };
-        GraphicsGate.prototype.drawNodes = function (canvas, input) {
+        GraphicsGate.prototype.drawNodes = function (canvas, input, drawLabels) {
             var _this = this;
+            if (drawLabels === undefined)
+                drawLabels = this.hovered;
             var fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
             fn.call(this.gate, function (node, i) {
                 var pt = _this.nodePoint(i, input);
                 canvas.fillRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 5, node.color, false);
                 canvas.drawRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 3, "black", 2, false);
-                if (_this.hovered) {
+                if (drawLabels) {
                     var fontSize = 14;
                     var fontSize2 = fontSize + 2;
                     canvas.fillText(node.label, pt.x + (input ? -_this.nodeSize / 2 : _this.nodeSize + _this.nodeSize / 2), pt.y + _this.nodeSize / 2, "white", "middle", input ? "right" : "left", fontSize + "px monospace");
@@ -556,6 +555,9 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.makeButton("img/save.png", "Save", function () {
                 _this.parent.builder.save();
             });
+            this.makeButton("img/info.png", "Info", function () {
+                _this.parent.builder.gateInfoWidget.show();
+            });
         }
         Toolbar.prototype.makeButton = function (imgSrc, text, onclick) {
             var c = document.createElement("div");
@@ -650,4 +652,62 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
         return BuilderContainer;
     }());
     exports.BuilderContainer = BuilderContainer;
+    var GateInfoWidget = (function () {
+        function GateInfoWidget(parent) {
+            var _this = this;
+            this.parent = parent;
+            var c = challenges_1.default[this.parent.circuit.type];
+            this.container = document.createElement("div");
+            this.container.className = "gateInfoWidget";
+            this.container.onclick = this.hide.bind(this);
+            this.panelContainer = document.createElement("div");
+            this.panelContainer.className = "panelList";
+            this.panelContainer.onclick = function (e) { return e.stopPropagation(); };
+            this.container.appendChild(this.panelContainer);
+            this.descriptionContainer = document.createElement("div");
+            this.descriptionContainer.className = "description";
+            this.descriptionContainer.innerHTML = c.description;
+            this.panelContainer.appendChild(this.descriptionContainer);
+            this.okButton = document.createElement("button");
+            this.okButton.className = "close";
+            this.okButton.innerText = "OK";
+            this.okButton.onclick = this.hide.bind(this);
+            this.panelContainer.appendChild(this.okButton);
+            c.expects.forEach(function (e, i) {
+                _this.addPanel(e);
+            });
+            this.parent.parent.container.appendChild(this.container);
+        }
+        GateInfoWidget.prototype.hide = function () {
+            utils_1.hideElement(this.container);
+        };
+        GateInfoWidget.prototype.show = function () {
+            utils_1.showElement(this.container);
+        };
+        GateInfoWidget.prototype.addPanel = function (e) {
+            this.panelContainer.appendChild(this.makePanel(this.parent.circuit, e.inputs, e.outputs));
+        };
+        GateInfoWidget.prototype.makePanel = function (gate, inputs, outputs) {
+            gate = gate.clone();
+            if (inputs) {
+                gate.forEachInput(function (node, i) { return node.value = inputs[i]; });
+            }
+            if (outputs) {
+                gate.forEachOutput(function (node, i) { return node.value = outputs[i]; });
+            }
+            var gg = gate.graphicsGate || new GraphicsGate(this.parent.parent, gate);
+            var c = new canvas_1.Canvas({ width: gg.width * 4, height: gg.height });
+            gg.y = 0;
+            gg.x = gg.width * 1.5;
+            gg.drawGate(c);
+            gg.drawNodes(c, true, true);
+            gg.drawNodes(c, false, true);
+            var ret = document.createElement("div");
+            ret.className = "panel";
+            ret.appendChild(c.canvas);
+            return ret;
+        };
+        return GateInfoWidget;
+    }());
+    exports.GateInfoWidget = GateInfoWidget;
 });
