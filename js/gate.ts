@@ -15,7 +15,7 @@ export function resetCircuits()
 
 export function loadCircuits(ui : UI)
 {
-    //resetCircuits();
+    resetCircuits();
 
     for (let type in challenges)
     {
@@ -195,6 +195,11 @@ export class Gate
     public forEachNode(fn : Function) : IONode[]
     {
         return this.forEachInput(fn).concat(this.forEachOutput(fn));
+    }
+
+    public get outputValues() : number[]
+    {
+        return this.outputNodes.map(node => node.value);
     }
 
     protected getIdList() : number[]

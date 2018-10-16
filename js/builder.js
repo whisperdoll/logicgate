@@ -1,9 +1,24 @@
-define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./challenges", "./storage"], function (require, exports, canvas_1, gate_1, utils_1, ionode_1, challenges_1, storage_1) {
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    }
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui", "./challenges", "./storage"], function (require, exports, canvas_1, gate_1, utils_1, ionode_1, ui_1, challenges_1, storage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Builder = (function () {
         function Builder(parent, circuit, width, height) {
+            var _this = this;
             this.mouse = { x: 0, y: 0 };
+            this.saved = true;
             this.padding = 32;
             this.parent = parent;
             this.circuit = circuit;
@@ -23,9 +38,22 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.container.className = "builder";
             parent.container.appendChild(this.container);
             this.gateInfoWidget = new GateInfoWidget(this);
+            this.gateErrorWidget = new GateErrorWidget(this);
+            this.saveWidget = new PopupYesNo(this, "Save?", "Do you want to save your work before exiting?", function () { _this.save(); _this.exit(true); }, function () { return _this.exit(true); });
+            this.successWidget = new PopupMessage(this, "Success!", "Good job! This circuit is now usable as a gate in other circuits!");
             this.build();
             this.reset();
         }
+        Builder.prototype.exit = function (force) {
+            if (force === void 0) { force = false; }
+            if (!this.saved && !force) {
+                this.saveWidget.show();
+            }
+            else {
+                this.die();
+                this.parent.parent.show(ui_1.UI.CHALLENGES);
+            }
+        };
         Builder.prototype.build = function () {
             var _this = this;
             this.circuit.forEachGate(function (gate) {
@@ -34,9 +62,15 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.circuit.forEachNode(function (node) {
                 node.graphicsNode = new GraphicsNode(_this.parent, node);
             });
+            this.parent.gateList.build();
             this.organizeNodes();
         };
         Builder.prototype.die = function () {
+            console.log(this.parent.container);
+            this.parent.container.removeChild(this.gateErrorWidget.container);
+            this.parent.container.removeChild(this.gateInfoWidget.container);
+            this.parent.container.removeChild(this.saveWidget.container);
+            this.parent.container.removeChild(this.successWidget.container);
             this.parent.container.removeChild(this.container);
         };
         Builder.prototype.step = function () {
@@ -68,17 +102,24 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             var n = this.circuit.addNode(new ionode_1.IONode(label), input, id);
             n.graphicsNode = new GraphicsNode(this.parent, n);
             this.organizeNodes();
+            this.saved = false;
         };
         Builder.prototype.removeNode = function (node, isInput) {
             this.circuit.removeNode(node.node, isInput);
             this.organizeNodes();
+            this.saved = false;
         };
         Builder.prototype.addGate = function (gate, id) {
             var g = this.circuit.addGate(gate, id);
             g.graphicsGate = new GraphicsGate(this.parent, g);
+            this.saved = false;
             return g.graphicsGate;
         };
         Builder.prototype.removeGate = function (gate) {
+            this.saved = false;
+            if (gate === this.hovering) {
+                this.hovering = null;
+            }
             return this.circuit.removeGate(gate.gate);
         };
         Builder.prototype.organizeNodes = function () {
@@ -225,18 +266,22 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 var h = this.hoveredGate();
                 if (h && h !== this.connectingGate) {
                     this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
+                    this.saved = false;
                 }
                 else if (n = this.circuit.forEachOutput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0]) {
                     this.connectingGate.connectNode(this.connectingOutput, n.graphicsNode);
+                    this.saved = false;
                 }
             }
             else if (this.connectingNode) {
                 var h = this.hoveredGate();
                 if (h) {
                     this.connectingNode.node.connect(h.gate.getInput(h.getConnectingInput(y)));
+                    this.saved = false;
                 }
                 else if (n = this.circuit.forEachOutput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0]) {
                     this.connectingNode.node.connect(n);
+                    this.saved = false;
                 }
             }
             this.connectingGate = null;
@@ -261,10 +306,12 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                 solved: challenges_1.default[this.circuit.type].solved,
                 solution: challenges_1.default[this.circuit.type].solution
             });
+            this.saved = true;
         };
         Builder.prototype.test = function () {
             var _this = this;
             var expects = challenges_1.default[this.circuit.type].expects;
+            var wrong = [];
             expects.forEach(function (e) {
                 e.inputs.forEach(function (value, i) {
                     _this.circuit.getInput(i).value = value;
@@ -275,13 +322,23 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
                         passed = false;
                     }
                 });
-                if (passed) {
-                    console.log("passed " + JSON.stringify(e.inputs));
-                }
-                else {
-                    console.log("failed " + JSON.stringify(e.inputs));
+                if (!passed) {
+                    wrong.push({
+                        expected: e,
+                        given: _this.circuit.outputValues
+                    });
                 }
             });
+            if (wrong.length === 0) {
+                this.successWidget.show();
+            }
+            else {
+                this.gateErrorWidget.clear();
+                wrong.forEach(function (thing) {
+                    _this.gateErrorWidget.addError(thing.expected, thing.given);
+                });
+                this.gateErrorWidget.show();
+            }
         };
         Builder.Colors = [
             "#e6194B",
@@ -501,15 +558,15 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             parent.container.appendChild(this.element);
             this.parent = parent;
         }
-        GateList.prototype.build = function (type) {
+        GateList.prototype.build = function () {
             this.element.innerHTML = "";
             this.children = [];
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
             this.appendGateElement(new gate_1.XORGate());
-            for (var type_1 in challenges_1.default) {
-                var c = challenges_1.default[type_1];
-                if (c.solved && c.type !== type_1) {
+            for (var type in challenges_1.default) {
+                var c = challenges_1.default[type];
+                if (c.solved && c.type !== type) {
                     this.appendGateElement(gate_1.CircuitGate.ofType(c.type));
                 }
             }
@@ -549,6 +606,9 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.container.className = "toolbar";
             this.parent = parent;
             parent.container.appendChild(this.container);
+            this.makeButton("img/back.png", "Back", function () {
+                _this.parent.builder.exit();
+            });
             this.makeButton("img/play.png", "Test", function () {
                 _this.parent.builder.test();
             });
@@ -595,9 +655,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             this.parent.container.appendChild(this.container);
         }
         BuilderContainer.prototype.editGate = function (gate) {
-            this.builder && this.builder.die();
             this.builder = new Builder(this, gate.clone(), this.resX, this.resY);
-            this.gateList.build(gate.type);
         };
         BuilderContainer.prototype.showOverlay = function () {
             this.overlay.canvas.style["z-index"] = 1;
@@ -652,42 +710,92 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
         return BuilderContainer;
     }());
     exports.BuilderContainer = BuilderContainer;
-    var GateInfoWidget = (function () {
-        function GateInfoWidget(parent) {
-            var _this = this;
+    var PopupWidget = (function () {
+        function PopupWidget(parent) {
             this.parent = parent;
-            var c = challenges_1.default[this.parent.circuit.type];
             this.container = document.createElement("div");
-            this.container.className = "gateInfoWidget";
+            this.container.className = "popup";
             this.container.onclick = this.hide.bind(this);
-            this.panelContainer = document.createElement("div");
-            this.panelContainer.className = "panelList";
-            this.panelContainer.onclick = function (e) { return e.stopPropagation(); };
-            this.container.appendChild(this.panelContainer);
-            this.descriptionContainer = document.createElement("div");
-            this.descriptionContainer.className = "description";
-            this.descriptionContainer.innerHTML = c.description;
-            this.panelContainer.appendChild(this.descriptionContainer);
+            this.innerContainer = document.createElement("div");
+            this.innerContainer.className = "inner";
+            this.innerContainer.onclick = function (e) { return e.stopPropagation(); };
+            this.container.appendChild(this.innerContainer);
             this.okButton = document.createElement("button");
             this.okButton.className = "close";
             this.okButton.innerText = "OK";
             this.okButton.onclick = this.hide.bind(this);
-            this.panelContainer.appendChild(this.okButton);
-            c.expects.forEach(function (e, i) {
-                _this.addPanel(e);
-            });
+            this.innerContainer.appendChild(this.okButton);
             this.parent.parent.container.appendChild(this.container);
+            this.hide();
         }
-        GateInfoWidget.prototype.hide = function () {
+        PopupWidget.prototype.hide = function () {
             utils_1.hideElement(this.container);
         };
-        GateInfoWidget.prototype.show = function () {
+        PopupWidget.prototype.show = function () {
             utils_1.showElement(this.container);
         };
-        GateInfoWidget.prototype.addPanel = function (e) {
+        return PopupWidget;
+    }());
+    exports.PopupWidget = PopupWidget;
+    var PopupMessage = (function (_super) {
+        __extends(PopupMessage, _super);
+        function PopupMessage(parent, title, message) {
+            var _this = _super.call(this, parent) || this;
+            _this.container.classList.add("popupMessage");
+            var $title = document.createElement("h1");
+            $title.innerText = title;
+            $title.className = "title";
+            _this.innerContainer.appendChild($title);
+            var $message = document.createElement("div");
+            $message.innerText = message;
+            $message.className = "message";
+            _this.innerContainer.appendChild($message);
+            return _this;
+        }
+        return PopupMessage;
+    }(PopupWidget));
+    exports.PopupMessage = PopupMessage;
+    var PopupYesNo = (function (_super) {
+        __extends(PopupYesNo, _super);
+        function PopupYesNo(parent, title, message, onyes, onno) {
+            var _this = _super.call(this, parent, title, message) || this;
+            _this.container.classList.add("popupYesNo");
+            var n = _this.okButton.cloneNode();
+            n.onclick = _this.okButton.onclick;
+            var c = _this.okButton.cloneNode();
+            c.onclick = _this.okButton.onclick;
+            _this.okButton.innerText = "Yes";
+            _this.okButton.classList.add("yes");
+            _this.okButton.addEventListener("click", function () { return onyes(); });
+            n.innerText = "No";
+            n.addEventListener("click", function () { return onno(); });
+            n.classList.add("no");
+            _this.innerContainer.appendChild(n);
+            c.innerText = "Cancel";
+            c.classList.add("cancel");
+            _this.innerContainer.appendChild(c);
+            return _this;
+        }
+        return PopupYesNo;
+    }(PopupMessage));
+    exports.PopupYesNo = PopupYesNo;
+    var GatePanelWidget = (function (_super) {
+        __extends(GatePanelWidget, _super);
+        function GatePanelWidget(parent) {
+            var _this = _super.call(this, parent) || this;
+            _this.container.classList.add("gatePanelWidget");
+            _this.descriptionContainer = document.createElement("div");
+            _this.descriptionContainer.className = "description";
+            _this.innerContainer.appendChild(_this.descriptionContainer);
+            _this.panelContainer = document.createElement("div");
+            _this.panelContainer.className = "panelList";
+            _this.innerContainer.appendChild(_this.panelContainer);
+            return _this;
+        }
+        GatePanelWidget.prototype.addPanel = function (e) {
             this.panelContainer.appendChild(this.makePanel(this.parent.circuit, e.inputs, e.outputs));
         };
-        GateInfoWidget.prototype.makePanel = function (gate, inputs, outputs) {
+        GatePanelWidget.prototype.makePanel = function (gate, inputs, outputs) {
             gate = gate.clone();
             if (inputs) {
                 gate.forEachInput(function (node, i) { return node.value = inputs[i]; });
@@ -707,7 +815,52 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ch
             ret.appendChild(c.canvas);
             return ret;
         };
+        return GatePanelWidget;
+    }(PopupWidget));
+    exports.GatePanelWidget = GatePanelWidget;
+    var GateInfoWidget = (function (_super) {
+        __extends(GateInfoWidget, _super);
+        function GateInfoWidget(parent) {
+            var _this = _super.call(this, parent) || this;
+            var c = challenges_1.default[_this.parent.circuit.type];
+            _this.descriptionContainer.innerHTML = c.description;
+            c.expects.forEach(function (e, i) {
+                _this.addPanel(e);
+            });
+            return _this;
+        }
         return GateInfoWidget;
-    }());
+    }(GatePanelWidget));
     exports.GateInfoWidget = GateInfoWidget;
+    var GateErrorWidget = (function (_super) {
+        __extends(GateErrorWidget, _super);
+        function GateErrorWidget(parent) {
+            var _this = _super.call(this, parent) || this;
+            _this.container.classList.add("gateErrorWidget");
+            _this.descriptionContainer.innerText = "There were some errors...";
+            return _this;
+        }
+        GateErrorWidget.prototype.clear = function () {
+            this.panelContainer.innerHTML = "";
+        };
+        GateErrorWidget.prototype.addError = function (e, given) {
+            var t = this.parent.circuit.type;
+            var c = challenges_1.default[t];
+            this.addLabel("Expected:");
+            this.addPanel(e);
+            e = utils_1.cloneJSON(e);
+            e.outputs = given;
+            this.addLabel("Given:");
+            this.addPanel(e);
+            this.panelContainer.appendChild(document.createElement("hr"));
+        };
+        GateErrorWidget.prototype.addLabel = function (str) {
+            var label = document.createElement("div");
+            label.className = "label";
+            label.innerText = str;
+            this.panelContainer.appendChild(label);
+        };
+        return GateErrorWidget;
+    }(GatePanelWidget));
+    exports.GateErrorWidget = GateErrorWidget;
 });

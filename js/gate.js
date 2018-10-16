@@ -21,6 +21,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
     }
     exports.resetCircuits = resetCircuits;
     function loadCircuits(ui) {
+        resetCircuits();
         var _loop_1 = function (type) {
             var c = challenges_1.default[type];
             var saved = storage_1.default.get(type, null);
@@ -143,6 +144,13 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         Gate.prototype.forEachNode = function (fn) {
             return this.forEachInput(fn).concat(this.forEachOutput(fn));
         };
+        Object.defineProperty(Gate.prototype, "outputValues", {
+            get: function () {
+                return this.outputNodes.map(function (node) { return node.value; });
+            },
+            enumerable: true,
+            configurable: true
+        });
         Gate.prototype.getIdList = function () {
             var ret = [];
             this.inputNodes.forEach(function (node) { return ret.push(node.id); });

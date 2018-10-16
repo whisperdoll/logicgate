@@ -57,6 +57,7 @@ html, body {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.75);
   padding: 8px 16px;
+  box-sizing: border-box;
 }
 .container-challenges .container-challenges-gates .gate {
   cursor: pointer;
@@ -106,7 +107,7 @@ html, body {
   width: 100%;
   height: 100%;
 }
-.container-builder .gateInfoWidget {
+.container-builder .popup {
   position: absolute;
   left: 0;
   top: 0;
@@ -114,7 +115,7 @@ html, body {
   height: 100%;
   width: 100%;
 }
-.container-builder .gateInfoWidget .panelList {
+.container-builder .popup .inner {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -122,25 +123,49 @@ html, body {
   border-radius: 7px;
   background-color: white;
   padding: 12px;
-  overflow: auto;
+  padding-top: -24px;
+  overflow: hidden;
   max-height: 70%;
   max-width: 70%;
   text-align: center;
 }
-.container-builder .gateInfoWidget .panelList .description {
-  margin-bottom: 12px;
-}
-.container-builder .gateInfoWidget .panelList .close {
+.container-builder .popup .inner .close {
   position: absolute;
   right: 12px;
   bottom: 8px;
-  background-color: #4442ca;
+  background-color: #605fd0;
   color: white;
   font-family: Helvetica, sans-serif;
   border: 0;
   border-radius: 3px;
   cursor: pointer;
-  padding: 6px;
+  padding: 6px 8px;
+  min-width: 48px;
+}
+.container-builder .gatePanelWidget .inner {
+  width: 70%;
+  height: 70%;
+}
+.container-builder .gatePanelWidget .inner .panelList {
+  margin-top: 4px;
+  overflow: auto;
+  max-height: 80%;
+  background-color: #eee;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.container-builder .popupMessage .title {
+  margin-top: 0;
+}
+.container-builder .popupMessage .inner {
+  padding-bottom: 3em;
+}
+.container-builder .popupYesNo .inner .no {
+  right: 64px;
+  background-color: #cc5555;
+}
+.container-builder .popupYesNo .inner .cancel {
+  left: 12px;
 }
 .container-builder .gateList {
   grid-area: gateList;

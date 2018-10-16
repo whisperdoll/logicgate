@@ -20,7 +20,7 @@ let challenges : { [ type : string ] : ChallengeObject } =
         type: "HAD",
         label: "HAD",
         inputs: [ "A", "B" ],
-        outputs: [ "S", "C" ],
+        outputs: [ "Sum", "Carry" ],
         expects: [
             {
                 inputs: [ 0, 0 ],

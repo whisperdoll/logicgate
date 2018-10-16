@@ -13,4 +13,8 @@ define(["require", "exports"], function (require, exports) {
         element.style.display = "";
     }
     exports.showElement = showElement;
+    function cloneJSON(o) {
+        return JSON.parse(JSON.stringify(o));
+    }
+    exports.cloneJSON = cloneJSON;
 });

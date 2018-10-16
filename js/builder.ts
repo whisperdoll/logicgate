@@ -1,6 +1,6 @@
 import { Canvas } from "./canvas"
 import { Gate, ANDGate, ORGate, XORGate, CircuitGate } from "./gate"
-import { pointInRect, hideElement, showElement } from "./utils"
+import { pointInRect, hideElement, showElement, cloneJSON } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
 import { SerializedObject } from "./circuit";
@@ -26,6 +26,11 @@ export class Builder
 
     public parent : BuilderContainer;
     public gateInfoWidget : GateInfoWidget;
+    public gateErrorWidget : GateErrorWidget;
+    public successWidget : PopupMessage;
+    public saveWidget : PopupYesNo;
+
+    public saved : boolean = true;
 
     private hoverNode : IONode;
 
@@ -83,10 +88,30 @@ export class Builder
         this.container.className = "builder";
 
         parent.container.appendChild(this.container);
+
         this.gateInfoWidget = new GateInfoWidget(this);
+        this.gateErrorWidget = new GateErrorWidget(this);
+        this.saveWidget = new PopupYesNo(this, "Save?",
+            "Do you want to save your work before exiting?",
+            () => { this.save(); this.exit(true) }, () => this.exit(true));
+        this.successWidget = new PopupMessage(this, "Success!",
+            "Good job! This circuit is now usable as a gate in other circuits!");
 
         this.build();
         this.reset();
+    }
+
+    public exit(force : boolean = false)
+    {
+        if (!this.saved && !force)
+        {
+            this.saveWidget.show();
+        }
+        else
+        {
+            this.die();
+            this.parent.parent.show(UI.CHALLENGES);
+        }
     }
 
     private build()
@@ -101,11 +126,18 @@ export class Builder
             node.graphicsNode = new GraphicsNode(this.parent, node);
         });
 
+        this.parent.gateList.build();
+
         this.organizeNodes();
     }
 
     public die() : void
     {
+        console.log(this.parent.container);
+        this.parent.container.removeChild(this.gateErrorWidget.container);
+        this.parent.container.removeChild(this.gateInfoWidget.container);
+        this.parent.container.removeChild(this.saveWidget.container);
+        this.parent.container.removeChild(this.successWidget.container);
         this.parent.container.removeChild(this.container);
     }
 
@@ -140,23 +172,33 @@ export class Builder
         let n = this.circuit.addNode(new IONode(label), input, id);
         n.graphicsNode = new GraphicsNode(this.parent, n);
         this.organizeNodes();
+        this.saved = false;
     }
 
     public removeNode(node : GraphicsNode, isInput : boolean)
     {
         this.circuit.removeNode(node.node, isInput);
         this.organizeNodes();
+        this.saved = false;
     }
 
     public addGate(gate : CircuitGate, id? : number) : GraphicsGate
     {
         let g = this.circuit.addGate(gate, id);
         g.graphicsGate = new GraphicsGate(this.parent, g);
+        this.saved = false;
         return g.graphicsGate;
     }
 
     public removeGate(gate : GraphicsGate) : void
     {
+        this.saved = false;
+
+        if (gate === this.hovering)
+        {
+            this.hovering = null;
+        }
+
         return this.circuit.removeGate(gate.gate);
     }
 
@@ -373,10 +415,12 @@ export class Builder
             if (h && h !== this.connectingGate)
             {
                 this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
+                this.saved = false;
             }
             else if (n = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0])
             {
                 this.connectingGate.connectNode(this.connectingOutput, n.graphicsNode);
+                this.saved = false;
             }
         }
         else if (this.connectingNode)
@@ -385,10 +429,12 @@ export class Builder
             if (h)
             {
                 this.connectingNode.node.connect(h.gate.getInput(h.getConnectingInput(y)));
+                this.saved = false;
             }
             else if (n = this.circuit.forEachOutput(node => node.graphicsNode.containsPoint(x, y))[0])
             {
                 this.connectingNode.node.connect(n);
+                this.saved = false;
             }
         }
 
@@ -424,11 +470,14 @@ export class Builder
             solved: challenges[this.circuit.type].solved,
             solution: challenges[this.circuit.type].solution
         });
+
+        this.saved = true;
     }
 
     public test()
     {
         let expects = challenges[this.circuit.type].expects;
+        let wrong : { expected : ChallengeExpectation, given : number[] }[] = [];
 
         expects.forEach(e =>
         {
@@ -447,17 +496,28 @@ export class Builder
                 }
             });
 
-            if (passed)
+            if (!passed)
             {
-                console.log("passed " + JSON.stringify(e.inputs));
-            }
-            else
-            {
-                console.log("failed " + JSON.stringify(e.inputs));
+                wrong.push({
+                    expected: e,
+                    given: this.circuit.outputValues
+                });
             }
         });
 
-
+        if (wrong.length === 0)
+        {
+            this.successWidget.show();
+        }
+        else
+        {
+            this.gateErrorWidget.clear();
+            wrong.forEach(thing =>
+            {
+                this.gateErrorWidget.addError(thing.expected, thing.given);
+            });
+            this.gateErrorWidget.show();
+        }
     }
 }
 
@@ -755,7 +815,7 @@ export class GateList
         this.parent = parent;
     }
 
-    public build(type : string)
+    public build()
     {
         this.element.innerHTML = "";
         this.children = [];
@@ -821,6 +881,11 @@ export class Toolbar
         this.container.className = "toolbar";
         this.parent = parent;
         parent.container.appendChild(this.container);
+
+        this.makeButton("img/back.png", "Back", () =>
+        {
+            this.parent.builder.exit();
+        });
 
         this.makeButton("img/play.png", "Test", ()=>
         {
@@ -898,10 +963,9 @@ export class BuilderContainer
 
     public editGate(gate : CircuitGate) : void
     {
-        this.builder && this.builder.die();
+        //this.builder && this.builder.die();
 
         this.builder = new Builder(this, gate.clone(), this.resX, this.resY);
-        this.gateList.build(gate.type);
     }
 
     public showOverlay() : void
@@ -973,12 +1037,11 @@ export class BuilderContainer
     }
 }
 
-export class GatePanelWidget
+export class PopupWidget
 {
     public parent : Builder;
     public container : HTMLElement;
-    public panelContainer : HTMLElement;
-    public descriptionContainer : HTMLElement;
+    public innerContainer : HTMLElement;
     public okButton : HTMLElement;
 
     constructor(parent : Builder)
@@ -986,25 +1049,22 @@ export class GatePanelWidget
         this.parent = parent;
 
         this.container = document.createElement("div");
-        this.container.className = "gateInfoWidget";
+        this.container.className = "popup";
         this.container.onclick = this.hide.bind(this);
 
-        this.panelContainer = document.createElement("div");
-        this.panelContainer.className = "panelList";
-        this.panelContainer.onclick = e => e.stopPropagation();
-        this.container.appendChild(this.panelContainer);
-
-        this.descriptionContainer = document.createElement("div");
-        this.descriptionContainer.className = "description";
-        this.panelContainer.appendChild(this.descriptionContainer);
+        this.innerContainer = document.createElement("div");
+        this.innerContainer.className = "inner";
+        this.innerContainer.onclick = e => e.stopPropagation();
+        this.container.appendChild(this.innerContainer);
 
         this.okButton = document.createElement("button");
         this.okButton.className = "close";
         this.okButton.innerText = "OK";
         this.okButton.onclick = this.hide.bind(this);
-        this.panelContainer.appendChild(this.okButton);
+        this.innerContainer.appendChild(this.okButton);
 
         this.parent.parent.container.appendChild(this.container);
+        this.hide();
     }
 
     public hide() : void
@@ -1015,6 +1075,74 @@ export class GatePanelWidget
     public show() : void
     {
         showElement(this.container);
+    }
+}
+
+export class PopupMessage extends PopupWidget
+{
+    constructor(parent : Builder, title : string, message : string)
+    {
+        super(parent);
+        this.container.classList.add("popupMessage");
+
+        let $title = document.createElement("h1");
+        $title.innerText = title;
+        $title.className = "title";
+        this.innerContainer.appendChild($title);
+
+        let $message = document.createElement("div");
+        $message.innerText = message;
+        $message.className = "message";
+        this.innerContainer.appendChild($message);
+    }
+}
+
+export class PopupYesNo extends PopupMessage
+{
+    constructor(parent : Builder, title : string, message : string,
+        onyes : Function, onno : Function)
+    {
+        super(parent, title, message);
+        this.container.classList.add("popupYesNo");
+
+        let n = <HTMLElement>this.okButton.cloneNode();
+        n.onclick = this.okButton.onclick;
+
+        let c = <HTMLElement>this.okButton.cloneNode();
+        c.onclick = this.okButton.onclick;
+
+        this.okButton.innerText = "Yes";
+        this.okButton.classList.add("yes");
+        this.okButton.addEventListener("click", () => onyes());
+
+        n.innerText = "No";
+        n.addEventListener("click", () => onno());
+        n.classList.add("no");
+        this.innerContainer.appendChild(n);
+
+        c.innerText = "Cancel";
+        c.classList.add("cancel");
+        this.innerContainer.appendChild(c);
+    }
+}
+
+export class GatePanelWidget extends PopupWidget
+{
+    public panelContainer : HTMLElement;
+    public descriptionContainer : HTMLElement;
+
+    constructor(parent : Builder)
+    {
+        super(parent);
+        this.container.classList.add("gatePanelWidget");
+
+        this.descriptionContainer = document.createElement("div");
+        this.descriptionContainer.className = "description";
+        this.innerContainer.appendChild(this.descriptionContainer);
+
+        this.panelContainer = document.createElement("div");
+        this.panelContainer.className = "panelList";
+        this.innerContainer.appendChild(this.panelContainer);
     }
 
     public addPanel(e : ChallengeExpectation)
@@ -1077,6 +1205,41 @@ export class GateErrorWidget extends GatePanelWidget
     {
         super(parent);
 
+        this.container.classList.add("gateErrorWidget");
+        this.descriptionContainer.innerText = "There were some errors...";
+
         /// doo it
+    }
+
+    public clear()
+    {
+        this.panelContainer.innerHTML = "";
+    }
+
+    // todo: test before exiting if other nodes use it ?
+
+    public addError(e : ChallengeExpectation, given : number[])
+    {
+        let t = this.parent.circuit.type;
+        let c = challenges[t];
+
+        this.addLabel("Expected:");
+        this.addPanel(e);
+
+        e = cloneJSON(e);
+        e.outputs = given;
+
+        this.addLabel("Given:");
+        this.addPanel(e);
+
+        this.panelContainer.appendChild(document.createElement("hr"));
+    }
+
+    private addLabel(str : string) : void
+    {
+        let label = document.createElement("div");
+        label.className = "label";
+        label.innerText = str;
+        this.panelContainer.appendChild(label);
     }
 }

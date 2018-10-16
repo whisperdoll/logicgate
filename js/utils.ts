@@ -12,3 +12,8 @@ export function showElement(element)
 {
     element.style.display = "";
 }
+
+export function cloneJSON(o)
+{
+    return JSON.parse(JSON.stringify(o));
+}
