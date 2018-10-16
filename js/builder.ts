@@ -126,7 +126,7 @@ export class Builder
             node.graphicsNode = new GraphicsNode(this.parent, node);
         });
 
-        this.parent.gateList.build();
+        this.parent.gateList.build(this.circuit.type);
 
         this.organizeNodes();
     }
@@ -508,6 +508,8 @@ export class Builder
         if (wrong.length === 0)
         {
             this.successWidget.show();
+            challenges[this.circuit.type].solved = true;
+            this.save();
         }
         else
         {
@@ -517,6 +519,7 @@ export class Builder
                 this.gateErrorWidget.addError(thing.expected, thing.given);
             });
             this.gateErrorWidget.show();
+            challenges[this.circuit.type].solved = false;
         }
     }
 }
@@ -815,7 +818,7 @@ export class GateList
         this.parent = parent;
     }
 
-    public build()
+    public build(circuitType : string)
     {
         this.element.innerHTML = "";
         this.children = [];
@@ -824,10 +827,12 @@ export class GateList
         this.appendGateElement(new ORGate());
         this.appendGateElement(new XORGate());
 
+        console.log(challenges);
+
         for (let type in challenges)
         {
             let c = challenges[type];
-            if (c.solved && c.type !== type)
+            if (c.solved && c.type !== circuitType)
             {
                 this.appendGateElement(CircuitGate.ofType(c.type));
             }

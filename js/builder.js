@@ -62,7 +62,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.circuit.forEachNode(function (node) {
                 node.graphicsNode = new GraphicsNode(_this.parent, node);
             });
-            this.parent.gateList.build();
+            this.parent.gateList.build(this.circuit.type);
             this.organizeNodes();
         };
         Builder.prototype.die = function () {
@@ -331,6 +331,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             });
             if (wrong.length === 0) {
                 this.successWidget.show();
+                challenges_1.default[this.circuit.type].solved = true;
+                this.save();
             }
             else {
                 this.gateErrorWidget.clear();
@@ -338,6 +340,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                     _this.gateErrorWidget.addError(thing.expected, thing.given);
                 });
                 this.gateErrorWidget.show();
+                challenges_1.default[this.circuit.type].solved = false;
             }
         };
         Builder.Colors = [
@@ -558,15 +561,16 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             parent.container.appendChild(this.element);
             this.parent = parent;
         }
-        GateList.prototype.build = function () {
+        GateList.prototype.build = function (circuitType) {
             this.element.innerHTML = "";
             this.children = [];
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
             this.appendGateElement(new gate_1.XORGate());
+            console.log(challenges_1.default);
             for (var type in challenges_1.default) {
                 var c = challenges_1.default[type];
-                if (c.solved && c.type !== type) {
+                if (c.solved && c.type !== circuitType) {
                     this.appendGateElement(gate_1.CircuitGate.ofType(c.type));
                 }
             }

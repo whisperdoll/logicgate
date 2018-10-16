@@ -21,7 +21,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
     }
     exports.resetCircuits = resetCircuits;
     function loadCircuits(ui) {
-        resetCircuits();
         var _loop_1 = function (type) {
             var c = challenges_1.default[type];
             var saved = storage_1.default.get(type, null);

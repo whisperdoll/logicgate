@@ -15,7 +15,7 @@ export function resetCircuits()
 
 export function loadCircuits(ui : UI)
 {
-    resetCircuits();
+    //resetCircuits();
 
     for (let type in challenges)
     {
