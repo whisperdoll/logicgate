@@ -9,57 +9,28 @@ import Storage from "./storage"
 
 export class Builder
 {
+    public parent : BuilderContainer;
     public canvas : Canvas;
     public container : HTMLElement;
     public circuit : CircuitGate;
+
     public mouse : { x : number, y : number } = { x: 0, y: 0 };
+    public saved : boolean = true;
+    public padding : number = 32;
 
     public movingGate : GraphicsGate;
     public movingOffset : { x : number, y : number };
 
     private connectingGate : GraphicsGate;
     private connectingOutput : number;
-
-    private connectingNode : GraphicsNode;
-
     public hovering : GraphicsGate;
+    private connectingNode : GraphicsNode;
+    private hoverNode : IONode;
 
-    public parent : BuilderContainer;
     public gateInfoWidget : GateInfoWidget;
     public gateErrorWidget : GateErrorWidget;
     public successWidget : PopupMessage;
     public saveWidget : PopupYesNo;
-
-    public saved : boolean = true;
-
-    private hoverNode : IONode;
-
-    public padding : number = 32;
-
-    public static Colors : string[] = [
-        "#e6194B",
-        "#3cb44b",
-        "#ffe119",
-        "#1111d8",
-        "#ff5000",
-        "#911eb4",
-        "#00ffc7",
-        "#42d4f4",
-        "#f032e6",
-        "#0061ff",
-        "#469990",
-        "#9A6324",
-        "#fffac8",
-        "#800000",
-        "#aaffc3",
-        "#536336",
-        "#808000",
-        "#3c545b",
-        "#000075",
-        "#000000"
-    ];
-
-    public static ColorIndex : number = 0;
 
     constructor(parent : BuilderContainer, circuit : CircuitGate, width : number, height : number)
     {
@@ -530,14 +501,12 @@ export class GraphicsNode
     public y : number = 0;
     public size : number = 32;
     public node : IONode;
-    public colorIndex : number;
     public parent : BuilderContainer;
 
     constructor(parent : BuilderContainer, node : IONode)
     {
         this.parent = parent;
         this.node = node;
-        this.colorIndex = Builder.ColorIndex++;
     }
 
     public get id() : number
@@ -597,7 +566,6 @@ export class GraphicsGate
     public nodeSize : number = 12;
     private nodePadding : number = 8;
     public hovered : boolean = false;
-    public colorIndex : number;
     public parent : BuilderContainer;
 
     constructor(parent : BuilderContainer, gate : CircuitGate)
@@ -606,7 +574,6 @@ export class GraphicsGate
         this.gate = gate;
         let nodes = Math.max(gate.numInputs, gate.numOutputs);
         this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
-        this.colorIndex = Builder.ColorIndex++;
     }
 
     public get x() : number
@@ -827,14 +794,19 @@ export class GateList
         this.appendGateElement(new ORGate());
         this.appendGateElement(new XORGate());
 
-        console.log(challenges);
-
         for (let type in challenges)
         {
             let c = challenges[type];
-            if (c.solved && c.type !== circuitType)
+        
+            // let's prevent circuits from containing eachother //
+            let forbid = new Set<string>();
+    
+            let t = CircuitGate.ofType(c.type);
+            t.forEachGate(gate => forbid.add(gate.type));
+
+            if (c.solved && c.type !== circuitType && !forbid.has(circuitType))
             {
-                this.appendGateElement(CircuitGate.ofType(c.type));
+                this.appendGateElement(t);
             }
         }
     }

@@ -343,29 +343,6 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                 challenges_1.default[this.circuit.type].solved = false;
             }
         };
-        Builder.Colors = [
-            "#e6194B",
-            "#3cb44b",
-            "#ffe119",
-            "#1111d8",
-            "#ff5000",
-            "#911eb4",
-            "#00ffc7",
-            "#42d4f4",
-            "#f032e6",
-            "#0061ff",
-            "#469990",
-            "#9A6324",
-            "#fffac8",
-            "#800000",
-            "#aaffc3",
-            "#536336",
-            "#808000",
-            "#3c545b",
-            "#000075",
-            "#000000"
-        ];
-        Builder.ColorIndex = 0;
         return Builder;
     }());
     exports.Builder = Builder;
@@ -376,7 +353,6 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.size = 32;
             this.parent = parent;
             this.node = node;
-            this.colorIndex = Builder.ColorIndex++;
         }
         Object.defineProperty(GraphicsNode.prototype, "id", {
             get: function () {
@@ -433,7 +409,6 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.gate = gate;
             var nodes = Math.max(gate.numInputs, gate.numOutputs);
             this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
-            this.colorIndex = Builder.ColorIndex++;
         }
         Object.defineProperty(GraphicsGate.prototype, "x", {
             get: function () {
@@ -567,12 +542,18 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
             this.appendGateElement(new gate_1.XORGate());
-            console.log(challenges_1.default);
-            for (var type in challenges_1.default) {
+            var _loop_1 = function (type) {
                 var c = challenges_1.default[type];
-                if (c.solved && c.type !== circuitType) {
-                    this.appendGateElement(gate_1.CircuitGate.ofType(c.type));
+                var forbid = new Set();
+                var t = gate_1.CircuitGate.ofType(c.type);
+                t.forEachGate(function (gate) { return forbid.add(gate.type); });
+                if (c.solved && c.type !== circuitType && !forbid.has(circuitType)) {
+                    this_1.appendGateElement(t);
                 }
+            };
+            var this_1 = this;
+            for (var type in challenges_1.default) {
+                _loop_1(type);
             }
         };
         GateList.prototype.createGateElement = function (gate) {
