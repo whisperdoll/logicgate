@@ -327,6 +327,20 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
                     var n = ret.addOutput(new ionode_1.IONode(c.label), c.id);
                     map.set(n, c);
                 }
+                else if (c.type === "ONE") {
+                    var g = new OneGate();
+                    g.x = c.x;
+                    g.y = c.y;
+                    ret.addGate(g, c.id);
+                    map.set(g, c);
+                }
+                else if (c.type === "ZERO") {
+                    var g = new ZeroGate();
+                    g.x = c.x;
+                    g.y = c.y;
+                    ret.addGate(g, c.id);
+                    map.set(g, c);
+                }
                 else if (c.type === "AND") {
                     var g = new ANDGate();
                     g.x = c.x;
@@ -380,6 +394,42 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         return CircuitGate;
     }(Gate));
     exports.CircuitGate = CircuitGate;
+    var ConstantGate = (function (_super) {
+        __extends(ConstantGate, _super);
+        function ConstantGate(type, label) {
+            var _this = _super.call(this, type, label) || this;
+            _this.addOutput(new ionode_1.IONode("output"));
+            return _this;
+        }
+        return ConstantGate;
+    }(CircuitGate));
+    exports.ConstantGate = ConstantGate;
+    var OneGate = (function (_super) {
+        __extends(OneGate, _super);
+        function OneGate() {
+            var _this = _super.call(this, "ONE", "1") || this;
+            _this.outputNodes[0].value = 1;
+            return _this;
+        }
+        OneGate.prototype.clone = function () {
+            return new OneGate();
+        };
+        return OneGate;
+    }(ConstantGate));
+    exports.OneGate = OneGate;
+    var ZeroGate = (function (_super) {
+        __extends(ZeroGate, _super);
+        function ZeroGate() {
+            var _this = _super.call(this, "ZERO", "0") || this;
+            _this.outputNodes[0].value = 0;
+            return _this;
+        }
+        ZeroGate.prototype.clone = function () {
+            return new ZeroGate();
+        };
+        return ZeroGate;
+    }(ConstantGate));
+    exports.ZeroGate = ZeroGate;
     var OpGate = (function (_super) {
         __extends(OpGate, _super);
         function OpGate(type, label) {

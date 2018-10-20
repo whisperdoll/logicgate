@@ -16,6 +16,25 @@ export interface ChallengeExpectation {
 
 let challenges : { [ type : string ] : ChallengeObject } =
 {
+    NOT: {
+        type: "NOT",
+        label: "NOT",
+        inputs: [ "input" ],
+        outputs: [ "output" ],
+        expects: [
+            {
+                inputs: [ 0 ],
+                outputs: [ 1 ]
+            },
+            {
+                inputs: [ 1 ],
+                outputs: [ 0 ]
+            }
+        ],
+        solution: "",
+        solved: false,
+        description: "<b>Output</b>s 0 if <b>input</b> is 1, and vice-versa."
+    },
     HAD: {
         type: "HAD",
         label: "HAD",

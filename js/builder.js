@@ -238,7 +238,6 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                 this.movingGate.y = y + this.movingOffset.y;
             }
             else if (this.connectingGate) {
-                var p1 = this.connectingGate.nodePoint(this.connectingOutput, false);
             }
             else if (this.connectingNode) {
             }
@@ -264,7 +263,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             var n = null;
             if (this.connectingGate) {
                 var h = this.hoveredGate();
-                if (h && h !== this.connectingGate) {
+                if (h && h !== this.connectingGate && h.gate.numInputs > 0) {
                     this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
                     this.saved = false;
                 }
@@ -539,6 +538,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
         GateList.prototype.build = function (circuitType) {
             this.element.innerHTML = "";
             this.children = [];
+            this.appendGateElement(new gate_1.ZeroGate());
+            this.appendGateElement(new gate_1.OneGate());
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
             this.appendGateElement(new gate_1.XORGate());

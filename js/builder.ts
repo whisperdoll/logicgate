@@ -1,5 +1,5 @@
 import { Canvas } from "./canvas"
-import { Gate, ANDGate, ORGate, XORGate, CircuitGate } from "./gate"
+import { Gate, ANDGate, ORGate, XORGate, CircuitGate, ZeroGate, OneGate } from "./gate"
 import { pointInRect, hideElement, showElement, cloneJSON } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
@@ -347,7 +347,7 @@ export class Builder
         }
         else if (this.connectingGate)
         {
-            let p1 = this.connectingGate.nodePoint(this.connectingOutput, false);
+            //let p1 = this.connectingGate.nodePoint(this.connectingOutput, false);
         }
         else if (this.connectingNode)
         {
@@ -383,7 +383,7 @@ export class Builder
         if (this.connectingGate)
         {
             let h = this.hoveredGate();
-            if (h && h !== this.connectingGate)
+            if (h && h !== this.connectingGate && h.gate.numInputs > 0)
             {
                 this.connectingGate.connect(this.connectingOutput, h, h.getConnectingInput(y));
                 this.saved = false;
@@ -790,6 +790,8 @@ export class GateList
         this.element.innerHTML = "";
         this.children = [];
 
+        this.appendGateElement(new ZeroGate());
+        this.appendGateElement(new OneGate());
         this.appendGateElement(new ANDGate());
         this.appendGateElement(new ORGate());
         this.appendGateElement(new XORGate());

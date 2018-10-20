@@ -467,6 +467,24 @@ export class CircuitGate extends Gate
                 let n = ret.addOutput(new IONode(c.label), c.id);
                 map.set(n, c);
             }
+            else if (c.type === "ONE")
+            {
+                let g = new OneGate();
+                g.x = c.x;
+                g.y = c.y;
+
+                ret.addGate(g, c.id);
+                map.set(g, c);
+            }
+            else if (c.type === "ZERO")
+            {
+                let g = new ZeroGate();
+                g.x = c.x;
+                g.y = c.y;
+
+                ret.addGate(g, c.id);
+                map.set(g, c);
+            }
             else if (c.type === "AND")
             {
                 let g = new ANDGate();
@@ -535,6 +553,44 @@ export class CircuitGate extends Gate
         });
 
         return ret;
+    }
+}
+
+export class ConstantGate extends CircuitGate
+{
+    constructor(type : string, label : string)
+    {
+        super(type, label);
+
+        this.addOutput(new IONode("output"));
+    }
+}
+
+export class OneGate extends ConstantGate
+{
+    constructor()
+    {
+        super("ONE", "1");
+        this.outputNodes[0].value = 1;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new OneGate();
+    }
+}
+
+export class ZeroGate extends ConstantGate
+{
+    constructor()
+    {
+        super("ZERO", "0");
+        this.outputNodes[0].value = 0;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new ZeroGate();
     }
 }
 
