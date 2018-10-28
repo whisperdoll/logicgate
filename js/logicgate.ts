@@ -1,4 +1,3 @@
-import { Builder, GateList, BuilderContainer } from "./builder";
 import { OpGate, ANDGate, ORGate, resetCircuits } from "./gate"
 import { UI } from "./ui";
 import Storage from "./storage"

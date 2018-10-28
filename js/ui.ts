@@ -1,7 +1,8 @@
-import { BuilderContainer, GraphicsGate } from "./builder";
-import { Gate, OpGate, ShallowGate, loadCircuits, CircuitGate } from "./gate";
+import { ShallowGate, loadCircuits, CircuitGate } from "./gate";
 import { hideElement, showElement } from "./utils";
 import challenges, { ChallengeObject } from "./challenges";
+import { BuilderContainer } from "./buildercontainer";
+import { GraphicsGate } from "./graphicsgate";
 
 export class UI
 {

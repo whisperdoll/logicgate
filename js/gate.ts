@@ -1,9 +1,8 @@
 import { IONode } from "./ionode"
-import { GraphicsGate } from "./builder";
-import { SerializedObject, SerializedCircuit, OutputConnection } from "./circuit";
+import { GraphicsGate } from "./graphicsgate";
+import { SerializedObject, SerializedCircuit, OutputConnection } from "./interfaces";
 import challenges, { ChallengeObject } from "./challenges";
 import Storage from "./storage"
-import { UI } from "./ui";
 import { concatSet } from "./utils";
 
 export function resetCircuits()
@@ -241,13 +240,6 @@ export class CircuitGate extends Gate
         this.type = type;
         this.label = label;
         this.id = -1;
-    }
-
-    public step() : void
-    {
-        this.inputNodes.forEach(node => node.propagate());
-        this.gates.forEach(gate => gate.step());
-        this.outputNodes.forEach(node => node.propagate());
     }
 
     public gateWithId(id : number) : CircuitGate

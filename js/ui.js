@@ -1,4 +1,4 @@
-define(["require", "exports", "./builder", "./gate", "./utils", "./challenges"], function (require, exports, builder_1, gate_1, utils_1, challenges_1) {
+define(["require", "exports", "./gate", "./utils", "./challenges", "./buildercontainer", "./graphicsgate"], function (require, exports, gate_1, utils_1, challenges_1, buildercontainer_1, graphicsgate_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var UI = (function () {
@@ -6,7 +6,7 @@ define(["require", "exports", "./builder", "./gate", "./utils", "./challenges"],
             this.parent = parent;
             this.container = document.createElement("div");
             this.container.className = "container-ui";
-            this.builderContainer = new builder_1.BuilderContainer(this, resX, resY);
+            this.builderContainer = new buildercontainer_1.BuilderContainer(this, resX, resY);
             this.challengeContainer = new ChallengeContainer(this);
             this.parent.appendChild(this.container);
             window.addEventListener("resize", this.resize.bind(this));
@@ -78,7 +78,7 @@ define(["require", "exports", "./builder", "./gate", "./utils", "./challenges"],
         }
         ChallengeContainer.prototype.addChallenge = function (challenge) {
             var _this = this;
-            var g = new builder_1.GraphicsGate(this.parent.builderContainer, new gate_1.ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
+            var g = new graphicsgate_1.GraphicsGate(this.parent.builderContainer, new gate_1.ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
             if (challenge.solved) {
                 g.color = "#CCFFCC";
             }

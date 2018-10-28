@@ -1,6 +1,6 @@
-import { GraphicsNode } from "./builder";
+import { GraphicsNode } from "./graphicsnode";
 import { Gate } from "./gate";
-import { SerializedObject } from "./circuit";
+import { SerializedObject } from "./interfaces";
 
 export class IONode
 {

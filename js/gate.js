@@ -180,11 +180,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
             _this.id = -1;
             return _this;
         }
-        CircuitGate.prototype.step = function () {
-            this.inputNodes.forEach(function (node) { return node.propagate(); });
-            this.gates.forEach(function (gate) { return gate.step(); });
-            this.outputNodes.forEach(function (node) { return node.propagate(); });
-        };
         CircuitGate.prototype.gateWithId = function (id) {
             return this.gates.find(function (gate) { return gate.id === id; });
         };
