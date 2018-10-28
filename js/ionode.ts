@@ -9,6 +9,7 @@ export class IONode
     protected _value : number;
     public outputNodes : IONode[];
     public inputNode : IONode = null;
+    public noValueColor : string = "white";
 
     public static NO_VALUE : number = -1;
     public static COLOR_0 : string = "#8888FF";
@@ -31,7 +32,7 @@ export class IONode
         {
             case 0: return IONode.COLOR_0;
             case 1: return IONode.COLOR_1;
-            default: return "white";
+            default: return this.noValueColor;
         }
     }
 

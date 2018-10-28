@@ -108,7 +108,18 @@ export class ChallengeContainer
 
     public addChallenge(challenge : ChallengeObject)
     {
-        let g = new GraphicsGate(this.parent.builderContainer, new ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
+        let g = new GraphicsGate(this.parent.builderContainer,
+            new ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
+
+        if (challenge.solved)
+        {
+            g.color = "#CCFFCC";
+        }
+        else
+        {
+            g.color = "#FFCCCC";
+        }
+
         let e = g.toHTMLElement();
         e.addEventListener("click", () =>
         {

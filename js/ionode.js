@@ -4,6 +4,7 @@ define(["require", "exports"], function (require, exports) {
     var IONode = (function () {
         function IONode(label) {
             this.inputNode = null;
+            this.noValueColor = "white";
             this.graphicsNode = null;
             this.id = -1;
             this.parentGate = null;
@@ -16,7 +17,7 @@ define(["require", "exports"], function (require, exports) {
                 switch (this.value) {
                     case 0: return IONode.COLOR_0;
                     case 1: return IONode.COLOR_1;
-                    default: return "white";
+                    default: return this.noValueColor;
                 }
             },
             enumerable: true,

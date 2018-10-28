@@ -561,7 +561,7 @@ export class GraphicsGate
 {
     public width : number = 64;
     public height : number = 24;
-    private color : string = "#fff";
+    public color : string = "#fff";
     public gate : CircuitGate;
     public nodeSize : number = 12;
     private nodePadding : number = 8;
@@ -646,8 +646,9 @@ export class GraphicsGate
 
         let fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
 
-        fn.call(this.gate, (node, i) =>
+        fn.call(this.gate, (node : IONode, i : number) =>
         {
+            node.noValueColor = this.color;
             let pt = this.nodePoint(i, input);
 
             canvas.fillRoundedRect(

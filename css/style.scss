@@ -88,6 +88,14 @@ html, body
             cursor: pointer;
             display: inline-block;
             margin-right: 8px;
+
+            
+
+            &:hover
+            {
+                background: rgba(255,255,255,0.3);
+                border-radius: 11px;
+            }
         }
     }
 }
@@ -247,6 +255,12 @@ html, body
             canvas
             {
                 cursor: pointer;
+
+                &:hover
+                {
+                    background: rgba(255,255,255,0.3);
+                    border-radius: 11px;
+                }
             }
         }
     }

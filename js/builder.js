@@ -467,6 +467,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                 drawLabels = this.hovered;
             var fn = input ? this.gate.forEachInput : this.gate.forEachOutput;
             fn.call(this.gate, function (node, i) {
+                node.noValueColor = _this.color;
                 var pt = _this.nodePoint(i, input);
                 canvas.fillRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 5, node.color, false);
                 canvas.drawRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 3, "black", 2, false);

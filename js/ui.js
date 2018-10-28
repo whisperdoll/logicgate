@@ -78,6 +78,12 @@ define(["require", "exports", "./builder", "./gate", "./utils"], function (requi
         ChallengeContainer.prototype.addChallenge = function (challenge) {
             var _this = this;
             var g = new builder_1.GraphicsGate(this.parent.builderContainer, new gate_1.ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
+            if (challenge.solved) {
+                g.color = "#CCFFCC";
+            }
+            else {
+                g.color = "#FFCCCC";
+            }
             var e = g.toHTMLElement();
             e.addEventListener("click", function () {
                 _this.parent.builderContainer.editGate(gate_1.CircuitGate.ofType(challenge.type));

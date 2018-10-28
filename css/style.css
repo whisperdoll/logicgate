@@ -64,6 +64,10 @@ html, body {
   display: inline-block;
   margin-right: 8px;
 }
+.container-challenges .container-challenges-gates .gate:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 11px;
+}
 
 .container-builder {
   width: 960px;
@@ -179,6 +183,10 @@ html, body {
 }
 .container-builder .gateList .gate canvas {
   cursor: pointer;
+}
+.container-builder .gateList .gate canvas:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 11px;
 }
 .container-builder .toolbar {
   grid-area: toolbar;
