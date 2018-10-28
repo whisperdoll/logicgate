@@ -503,6 +503,15 @@ export class CircuitGate extends Gate
                 ret.addGate(g, c.id);
                 map.set(g, c);
             }
+            else if (c.type === "NOT")
+            {
+                let g = new NOTGate();
+                g.x = c.x;
+                g.y = c.y;
+
+                ret.addGate(g, c.id);
+                map.set(g, c);
+            }
             else
             {
                 if (!challenges[c.type])
@@ -582,6 +591,34 @@ export class ZeroGate extends ConstantGate
     public clone() : CircuitGate
     {
         return new ZeroGate();
+    }
+}
+
+export class NOTGate extends CircuitGate
+{
+    constructor()
+    {
+        super("NOT", "NOT");
+
+        this.addInput(new IONode("input"));
+        this.addOutput(new IONode("output"));
+    }
+
+    public nodeFn() : void
+    {
+        if (this.inputNodes[0].value === IONode.NO_VALUE)
+        {
+            this.outputNodes[0].value = IONode.NO_VALUE;
+        }
+        else
+        {
+            this.outputNodes[0].value = this.inputNodes[0].value ^ 1;
+        }
+    }
+
+    public clone() : CircuitGate
+    {
+        return new NOTGate();
     }
 }
 

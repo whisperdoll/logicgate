@@ -3,7 +3,7 @@ import { OpGate, ANDGate, ORGate, resetCircuits } from "./gate"
 import { UI } from "./ui";
 import Storage from "./storage"
 
-const VERSION = 1;
+const VERSION = 2;
 
 if (Storage.get("version", 0) < VERSION)
 {

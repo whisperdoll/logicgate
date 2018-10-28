@@ -541,6 +541,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.children = [];
             this.appendGateElement(new gate_1.ZeroGate());
             this.appendGateElement(new gate_1.OneGate());
+            this.appendGateElement(new gate_1.NOTGate());
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
             var _loop_1 = function (type) {

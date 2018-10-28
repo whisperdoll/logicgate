@@ -1,5 +1,5 @@
 import { Canvas } from "./canvas"
-import { Gate, ANDGate, ORGate, CircuitGate, ZeroGate, OneGate } from "./gate"
+import { Gate, ANDGate, ORGate, NOTGate, CircuitGate, ZeroGate, OneGate } from "./gate"
 import { pointInRect, hideElement, showElement, cloneJSON } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
@@ -793,9 +793,9 @@ export class GateList
 
         this.appendGateElement(new ZeroGate());
         this.appendGateElement(new OneGate());
+        this.appendGateElement(new NOTGate());
         this.appendGateElement(new ANDGate());
         this.appendGateElement(new ORGate());
-        //this.appendGateElement(new XORGate());
 
         for (let type in challenges)
         {

@@ -355,6 +355,13 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
                     ret.addGate(g, c.id);
                     map.set(g, c);
                 }
+                else if (c.type === "NOT") {
+                    var g = new NOTGate();
+                    g.x = c.x;
+                    g.y = c.y;
+                    ret.addGate(g, c.id);
+                    map.set(g, c);
+                }
                 else {
                     if (!challenges_1.default[c.type]) {
                         throw "no gate/circuit/w.e with type "
@@ -423,6 +430,28 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         return ZeroGate;
     }(ConstantGate));
     exports.ZeroGate = ZeroGate;
+    var NOTGate = (function (_super) {
+        __extends(NOTGate, _super);
+        function NOTGate() {
+            var _this = _super.call(this, "NOT", "NOT") || this;
+            _this.addInput(new ionode_1.IONode("input"));
+            _this.addOutput(new ionode_1.IONode("output"));
+            return _this;
+        }
+        NOTGate.prototype.nodeFn = function () {
+            if (this.inputNodes[0].value === ionode_1.IONode.NO_VALUE) {
+                this.outputNodes[0].value = ionode_1.IONode.NO_VALUE;
+            }
+            else {
+                this.outputNodes[0].value = this.inputNodes[0].value ^ 1;
+            }
+        };
+        NOTGate.prototype.clone = function () {
+            return new NOTGate();
+        };
+        return NOTGate;
+    }(CircuitGate));
+    exports.NOTGate = NOTGate;
     var OpGate = (function (_super) {
         __extends(OpGate, _super);
         function OpGate(type, label) {
