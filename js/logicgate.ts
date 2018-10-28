@@ -3,7 +3,7 @@ import { OpGate, ANDGate, ORGate, resetCircuits } from "./gate"
 import { UI } from "./ui";
 import Storage from "./storage"
 
-const VERSION = 2;
+const VERSION = 3;
 
 if (Storage.get("version", 0) < VERSION)
 {
@@ -15,7 +15,7 @@ Storage.set("version", VERSION);
 
 let container = document.getElementById("container");
 
-let ui = new UI(container, 960 - (960 * 0.11), 486);
+let ui = new UI(container, 960 - (960 * 0.15), 486);
 
 window["b"] = ui;
 

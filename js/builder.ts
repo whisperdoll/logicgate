@@ -522,11 +522,11 @@ export class GraphicsNode
     public draw(canvas : Canvas) : void
     {
         canvas.fillCircleInSquare(this.x, this.y, this.size, this.node.color);
-        canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
+        canvas.drawCircleInSquare(this.x, this.y, this.size, "#333333", 2);
 
         if (this.node.value !== IONode.NO_VALUE)
         {
-            canvas.fillText(this.node.value, this.cx, this.cy, "black",
+            canvas.fillText(this.node.value, this.cx, this.cy, "#333333",
                 "middle", "center", "16px monospace");
         }
     }
@@ -636,8 +636,8 @@ export class GraphicsGate
         //this.drawNodes(canvas, false);
 
         canvas.fillRoundedRect(this.x, this.y, this.width, this.height, 5, this.color, false);
-        canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "black", 2, false);
-        canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
+        canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "#333333", 2, false);
+        canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "#333333", "middle", "center", "24px monospace");
     }
 
     public drawNodes(canvas : Canvas, input : boolean, drawLabels? : boolean) : void
@@ -667,7 +667,7 @@ export class GraphicsGate
                 this.nodeSize,
                 this.nodeSize,
                 3,
-                "black",
+                "#333333",
                 2,
                 false
             );
@@ -691,7 +691,7 @@ export class GraphicsGate
                     node.label,
                     pt.x + (input ? -this.nodeSize / 2 : this.nodeSize + this.nodeSize / 2),
                     pt.y + this.nodeSize / 2,
-                    "black",
+                    "#333333",
                     "middle",
                     input ? "right" : "left",
                     fontSize + "px monospace"
@@ -802,11 +802,9 @@ export class GateList
         {
             let c = challenges[type];
         
-            // let's prevent circuits from containing eachother //
-            let forbid = new Set<string>();
-    
+            // let's prevent circuits from containing eachother //    
             let t = CircuitGate.ofType(c.type);
-            t.forEachGate(gate => forbid.add(gate.type));
+            let forbid = t.gateTypesUsed;
 
             if (c.solved && c.type !== circuitType && !forbid.has(circuitType))
             {
@@ -927,7 +925,7 @@ export class BuilderContainer
         this.resX = resX;
         this.resY = resY;
 
-        this.overlay = new Canvas({ width: resX * (100/89), height: resY });
+        this.overlay = new Canvas({ width: resX * (100/(100-15)), height: resY });
         this.overlay.canvas.className = "overlay";
 
         this.container.appendChild(this.overlay.canvas);
@@ -965,7 +963,7 @@ export class BuilderContainer
 
         this.builder.mouseUp.call(this.builder, x, y, ox, oy, e);
         
-        if (x > this.overlay.width * 0.9)
+        if (x > this.overlay.width * (1 - 0.15))
         {
             this.builder.removeGate(gate);
         }
@@ -991,9 +989,9 @@ export class BuilderContainer
 
         if (this.builder.movingGate)
         {
-            if (this.builder.mouse.x > this.overlay.width * 0.9)
+            if (this.builder.mouse.x > this.overlay.width * (1 - 0.15))
             {
-                this.overlay.fillRect(this.overlay.width * 0.9, 0, this.overlay.width * 0.1, this.overlay.height, "rgba(255,0,0,0.3)");
+                this.overlay.fillRect(this.overlay.width * (1 - 0.15), 0, this.overlay.width * 0.15, this.overlay.height, "rgba(255,0,0,0.3)");
             }
         }
 

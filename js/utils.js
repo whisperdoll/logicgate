@@ -17,4 +17,8 @@ define(["require", "exports"], function (require, exports) {
         return JSON.parse(JSON.stringify(o));
     }
     exports.cloneJSON = cloneJSON;
+    function concatSet(set, otherSet) {
+        otherSet.forEach(function (item) { return set.add(item); });
+    }
+    exports.concatSet = concatSet;
 });

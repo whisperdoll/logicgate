@@ -17,3 +17,8 @@ export function cloneJSON(o)
 {
     return JSON.parse(JSON.stringify(o));
 }
+
+export function concatSet(set : Set<any>, otherSet : Set<any>)
+{
+    otherSet.forEach((item : any) => set.add(item));
+}

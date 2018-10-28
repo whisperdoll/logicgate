@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-define(["require", "exports", "./ionode", "./challenges", "./storage"], function (require, exports, ionode_1, challenges_1, storage_1) {
+define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"], function (require, exports, ionode_1, challenges_1, storage_1, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function resetCircuits() {
@@ -20,7 +20,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         }
     }
     exports.resetCircuits = resetCircuits;
-    function loadCircuits(ui) {
+    function loadCircuits() {
         var _loop_1 = function (type) {
             var c = challenges_1.default[type];
             var saved = storage_1.default.get(type, null);
@@ -40,7 +40,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
             }
             c.solution = saved.solution;
             c.solved = saved.solved;
-            ui.challengeContainer.addChallenge(c);
         };
         for (var type in challenges_1.default) {
             _loop_1(type);
@@ -391,6 +390,18 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
             });
             return ret;
         };
+        Object.defineProperty(CircuitGate.prototype, "gateTypesUsed", {
+            get: function () {
+                var ret = new Set();
+                this.gates.forEach(function (gate) {
+                    ret.add(gate.type);
+                    utils_1.concatSet(ret, gate.gateTypesUsed);
+                });
+                return ret;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return CircuitGate;
     }(Gate));
     exports.CircuitGate = CircuitGate;

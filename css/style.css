@@ -81,7 +81,7 @@ html, body {
   min-height: 0;
   overflow: hidden;
   display: grid;
-  grid-template-columns: auto 11%;
+  grid-template-columns: auto 15%;
   grid-template-rows: auto 54px;
   grid-template-areas: "builder gateList" "toolbar toolbar";
 }
@@ -178,7 +178,7 @@ html, body {
   background-color: rgba(0, 0, 0, 0.8);
   text-align: center;
 }
-.container-builder .gateList .gate {
+.container-builder .gateList .gate:first-of-type {
   margin-top: 6px;
 }
 .container-builder .gateList .gate canvas {

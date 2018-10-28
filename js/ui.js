@@ -1,4 +1,4 @@
-define(["require", "exports", "./builder", "./gate", "./utils"], function (require, exports, builder_1, gate_1, utils_1) {
+define(["require", "exports", "./builder", "./gate", "./utils", "./challenges"], function (require, exports, builder_1, gate_1, utils_1, challenges_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var UI = (function () {
@@ -8,11 +8,11 @@ define(["require", "exports", "./builder", "./gate", "./utils"], function (requi
             this.container.className = "container-ui";
             this.builderContainer = new builder_1.BuilderContainer(this, resX, resY);
             this.challengeContainer = new ChallengeContainer(this);
-            this.show(UI.CHALLENGES);
             this.parent.appendChild(this.container);
             window.addEventListener("resize", this.resize.bind(this));
             this.resize();
-            gate_1.loadCircuits(this);
+            gate_1.loadCircuits();
+            this.show(UI.CHALLENGES);
         }
         UI.prototype.show = function (what) {
             this.hideAll();
@@ -21,6 +21,7 @@ define(["require", "exports", "./builder", "./gate", "./utils"], function (requi
                     utils_1.showElement(this.builderContainer.container);
                     break;
                 case UI.CHALLENGES:
+                    this.challengeContainer.build();
                     utils_1.showElement(this.challengeContainer.container);
                     break;
             }
@@ -90,6 +91,12 @@ define(["require", "exports", "./builder", "./gate", "./utils"], function (requi
                 _this.parent.show(UI.BUILDER);
             });
             this.gateContainer.appendChild(e);
+        };
+        ChallengeContainer.prototype.build = function () {
+            this.gateContainer.innerHTML = "";
+            for (var type in challenges_1.default) {
+                this.addChallenge(challenges_1.default[type]);
+            }
         };
         return ChallengeContainer;
     }());

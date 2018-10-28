@@ -1,7 +1,7 @@
 import { BuilderContainer, GraphicsGate } from "./builder";
 import { Gate, OpGate, ShallowGate, loadCircuits, CircuitGate } from "./gate";
 import { hideElement, showElement } from "./utils";
-import { ChallengeObject } from "./challenges";
+import challenges, { ChallengeObject } from "./challenges";
 
 export class UI
 {
@@ -22,14 +22,14 @@ export class UI
         this.builderContainer = new BuilderContainer(this, resX, resY);
         this.challengeContainer = new ChallengeContainer(this);
 
-        this.show(UI.CHALLENGES);
 
         this.parent.appendChild(this.container);
 
         window.addEventListener("resize", this.resize.bind(this));
         this.resize();
 
-        loadCircuits(this);
+        loadCircuits();
+        this.show(UI.CHALLENGES); // builds it too
     }
 
     public show(what : number) : void
@@ -38,8 +38,13 @@ export class UI
 
         switch (what)
         {
-            case UI.BUILDER: showElement(this.builderContainer.container); break;
-            case UI.CHALLENGES: showElement(this.challengeContainer.container); break;
+            case UI.BUILDER:
+                showElement(this.builderContainer.container);
+                break;
+            case UI.CHALLENGES:
+                this.challengeContainer.build();
+                showElement(this.challengeContainer.container);
+                break;
         }
     }
 
@@ -128,5 +133,15 @@ export class ChallengeContainer
         });
 
         this.gateContainer.appendChild(e);
+    }
+
+    public build()
+    {
+        this.gateContainer.innerHTML = "";
+
+        for (let type in challenges)
+        {
+            this.addChallenge(challenges[type]);
+        }
     }
 }

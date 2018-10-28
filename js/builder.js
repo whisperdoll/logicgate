@@ -365,9 +365,9 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
         });
         GraphicsNode.prototype.draw = function (canvas) {
             canvas.fillCircleInSquare(this.x, this.y, this.size, this.node.color);
-            canvas.drawCircleInSquare(this.x, this.y, this.size, "black", 2);
+            canvas.drawCircleInSquare(this.x, this.y, this.size, "#333333", 2);
             if (this.node.value !== ionode_1.IONode.NO_VALUE) {
-                canvas.fillText(this.node.value, this.cx, this.cy, "black", "middle", "center", "16px monospace");
+                canvas.fillText(this.node.value, this.cx, this.cy, "#333333", "middle", "center", "16px monospace");
             }
         };
         Object.defineProperty(GraphicsNode.prototype, "cx", {
@@ -458,8 +458,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
         };
         GraphicsGate.prototype.drawGate = function (canvas) {
             canvas.fillRoundedRect(this.x, this.y, this.width, this.height, 5, this.color, false);
-            canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "black", 2, false);
-            canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "black", "middle", "center", "24px monospace");
+            canvas.drawRoundedRect(this.x, this.y, this.width, this.height, 5, "#333333", 2, false);
+            canvas.fillText(this.gate.label, this.x + this.width / 2, this.y + this.height / 2, "#333333", "middle", "center", "24px monospace");
         };
         GraphicsGate.prototype.drawNodes = function (canvas, input, drawLabels) {
             var _this = this;
@@ -470,12 +470,12 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                 node.noValueColor = _this.color;
                 var pt = _this.nodePoint(i, input);
                 canvas.fillRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 5, node.color, false);
-                canvas.drawRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 3, "black", 2, false);
+                canvas.drawRoundedRect(pt.x, pt.y, _this.nodeSize, _this.nodeSize, 3, "#333333", 2, false);
                 if (drawLabels) {
                     var fontSize = 14;
                     var fontSize2 = fontSize + 2;
                     canvas.fillText(node.label, pt.x + (input ? -_this.nodeSize / 2 : _this.nodeSize + _this.nodeSize / 2), pt.y + _this.nodeSize / 2, "white", "middle", input ? "right" : "left", fontSize + "px monospace");
-                    canvas.fillText(node.label, pt.x + (input ? -_this.nodeSize / 2 : _this.nodeSize + _this.nodeSize / 2), pt.y + _this.nodeSize / 2, "black", "middle", input ? "right" : "left", fontSize + "px monospace");
+                    canvas.fillText(node.label, pt.x + (input ? -_this.nodeSize / 2 : _this.nodeSize + _this.nodeSize / 2), pt.y + _this.nodeSize / 2, "#333333", "middle", input ? "right" : "left", fontSize + "px monospace");
                 }
             });
         };
@@ -545,18 +545,13 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.appendGateElement(new gate_1.NOTGate());
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
-            var _loop_1 = function (type) {
-                var c = challenges_1.default[type];
-                var forbid = new Set();
-                var t = gate_1.CircuitGate.ofType(c.type);
-                t.forEachGate(function (gate) { return forbid.add(gate.type); });
-                if (c.solved && c.type !== circuitType && !forbid.has(circuitType)) {
-                    this_1.appendGateElement(t);
-                }
-            };
-            var this_1 = this;
             for (var type in challenges_1.default) {
-                _loop_1(type);
+                var c = challenges_1.default[type];
+                var t = gate_1.CircuitGate.ofType(c.type);
+                var forbid = t.gateTypesUsed;
+                if (c.solved && c.type !== circuitType && !forbid.has(circuitType)) {
+                    this.appendGateElement(t);
+                }
             }
         };
         GateList.prototype.createGateElement = function (gate) {
@@ -632,7 +627,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.toolbar = new Toolbar(this);
             this.resX = resX;
             this.resY = resY;
-            this.overlay = new canvas_1.Canvas({ width: resX * (100 / 89), height: resY });
+            this.overlay = new canvas_1.Canvas({ width: resX * (100 / (100 - 15)), height: resY });
             this.overlay.canvas.className = "overlay";
             this.container.appendChild(this.overlay.canvas);
             this.overlay.mouse.addEventListener("move", this.mouseMove.bind(this));
@@ -654,7 +649,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
         BuilderContainer.prototype.mouseUp = function (x, y, ox, oy, e) {
             var gate = this.builder.movingGate;
             this.builder.mouseUp.call(this.builder, x, y, ox, oy, e);
-            if (x > this.overlay.width * 0.9) {
+            if (x > this.overlay.width * (1 - 0.15)) {
                 this.builder.removeGate(gate);
             }
             if (y > this.resY) {
@@ -670,8 +665,8 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
                 return;
             this.overlay.clear();
             if (this.builder.movingGate) {
-                if (this.builder.mouse.x > this.overlay.width * 0.9) {
-                    this.overlay.fillRect(this.overlay.width * 0.9, 0, this.overlay.width * 0.1, this.overlay.height, "rgba(255,0,0,0.3)");
+                if (this.builder.mouse.x > this.overlay.width * (1 - 0.15)) {
+                    this.overlay.fillRect(this.overlay.width * (1 - 0.15), 0, this.overlay.width * 0.15, this.overlay.height, "rgba(255,0,0,0.3)");
                 }
             }
             this.builder.draw();

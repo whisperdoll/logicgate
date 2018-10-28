@@ -4,6 +4,7 @@ import { SerializedObject, SerializedCircuit, OutputConnection } from "./circuit
 import challenges, { ChallengeObject } from "./challenges";
 import Storage from "./storage"
 import { UI } from "./ui";
+import { concatSet } from "./utils";
 
 export function resetCircuits()
 {
@@ -13,7 +14,7 @@ export function resetCircuits()
     }
 }
 
-export function loadCircuits(ui : UI)
+export function loadCircuits()
 {
     //resetCircuits();
 
@@ -46,8 +47,6 @@ export function loadCircuits(ui : UI)
 
         c.solution = saved.solution;
         c.solved = saved.solved;
-
-        ui.challengeContainer.addChallenge(c);
     }
 }
 
@@ -550,6 +549,19 @@ export class CircuitGate extends Gate
                 // test ids bla bla
                 srcNode.connect(destNode);
             });
+        });
+
+        return ret;
+    }
+
+    public get gateTypesUsed() : Set<string>
+    {
+        let ret = new Set<string>();
+        
+        this.gates.forEach((gate : CircuitGate) =>
+        {
+            ret.add(gate.type);
+            concatSet(ret, gate.gateTypesUsed);
         });
 
         return ret;
