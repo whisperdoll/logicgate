@@ -408,6 +408,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.gate = gate;
             var nodes = Math.max(gate.numInputs, gate.numOutputs);
             this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
+            this.width = 24 + ((64 - 24) / 3) * this.gate.label.length;
         }
         Object.defineProperty(GraphicsGate.prototype, "x", {
             get: function () {
@@ -542,7 +543,6 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.appendGateElement(new gate_1.OneGate());
             this.appendGateElement(new gate_1.ANDGate());
             this.appendGateElement(new gate_1.ORGate());
-            this.appendGateElement(new gate_1.XORGate());
             var _loop_1 = function (type) {
                 var c = challenges_1.default[type];
                 var forbid = new Set();
@@ -630,7 +630,7 @@ define(["require", "exports", "./canvas", "./gate", "./utils", "./ionode", "./ui
             this.toolbar = new Toolbar(this);
             this.resX = resX;
             this.resY = resY;
-            this.overlay = new canvas_1.Canvas({ width: resX * (10 / 9), height: resY });
+            this.overlay = new canvas_1.Canvas({ width: resX * (100 / 89), height: resY });
             this.overlay.canvas.className = "overlay";
             this.container.appendChild(this.overlay.canvas);
             this.overlay.mouse.addEventListener("move", this.mouseMove.bind(this));

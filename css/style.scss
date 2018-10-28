@@ -94,7 +94,7 @@ html, body
 
 .container-builder
 {
-    $gateList-width: 10%;
+    $gateList-width: 11%;
     $toolbar-height: 54px;
     $bgColor: rgba(0,0,0,0.8);
     width: 960px;
@@ -242,7 +242,7 @@ html, body
 
         .gate
         {
-            margin-top: 12px;
+            margin-top: 6px;
 
             canvas
             {

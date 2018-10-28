@@ -355,13 +355,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
                     ret.addGate(g, c.id);
                     map.set(g, c);
                 }
-                else if (c.type === "XOR") {
-                    var g = new XORGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
                 else {
                     if (!challenges_1.default[c.type]) {
                         throw "no gate/circuit/w.e with type "
@@ -486,20 +479,6 @@ define(["require", "exports", "./ionode", "./challenges", "./storage"], function
         return ORGate;
     }(OpGate));
     exports.ORGate = ORGate;
-    var XORGate = (function (_super) {
-        __extends(XORGate, _super);
-        function XORGate() {
-            return _super.call(this, "XOR", "XOR") || this;
-        }
-        XORGate.prototype.gateFn = function () {
-            return this.inputNodes[0].value ^ this.inputNodes[1].value;
-        };
-        XORGate.prototype.clone = function () {
-            return new XORGate();
-        };
-        return XORGate;
-    }(OpGate));
-    exports.XORGate = XORGate;
     var ShallowGate = (function (_super) {
         __extends(ShallowGate, _super);
         function ShallowGate(label, numInputs, numOutputs) {

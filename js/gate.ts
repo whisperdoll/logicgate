@@ -503,15 +503,6 @@ export class CircuitGate extends Gate
                 ret.addGate(g, c.id);
                 map.set(g, c);
             }
-            else if (c.type === "XOR")
-            {
-                let g = new XORGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
             else
             {
                 if (!challenges[c.type])
@@ -663,24 +654,6 @@ export class ORGate extends OpGate
     public clone() : CircuitGate
     {
         return new ORGate();
-    }
-}
-
-export class XORGate extends OpGate
-{
-    constructor()
-    {
-        super("XOR", "XOR");
-    }
-
-    protected gateFn() : number
-    {
-        return this.inputNodes[0].value ^ this.inputNodes[1].value;
-    }
-
-    public clone() : CircuitGate
-    {
-        return new XORGate();
     }
 }
 

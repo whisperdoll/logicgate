@@ -1,5 +1,5 @@
 import { Canvas } from "./canvas"
-import { Gate, ANDGate, ORGate, XORGate, CircuitGate, ZeroGate, OneGate } from "./gate"
+import { Gate, ANDGate, ORGate, CircuitGate, ZeroGate, OneGate } from "./gate"
 import { pointInRect, hideElement, showElement, cloneJSON } from "./utils"
 import { IONode } from "./ionode"
 import { UI } from "./ui";
@@ -574,6 +574,7 @@ export class GraphicsGate
         this.gate = gate;
         let nodes = Math.max(gate.numInputs, gate.numOutputs);
         this.height = nodes * this.nodeSize + (nodes + 1) * this.nodePadding;
+        this.width = 24 + ((64-24)/3) * this.gate.label.length;
     }
 
     public get x() : number
@@ -794,7 +795,7 @@ export class GateList
         this.appendGateElement(new OneGate());
         this.appendGateElement(new ANDGate());
         this.appendGateElement(new ORGate());
-        this.appendGateElement(new XORGate());
+        //this.appendGateElement(new XORGate());
 
         for (let type in challenges)
         {
@@ -925,7 +926,7 @@ export class BuilderContainer
         this.resX = resX;
         this.resY = resY;
 
-        this.overlay = new Canvas({ width: resX * (10/9), height: resY });
+        this.overlay = new Canvas({ width: resX * (100/89), height: resY });
         this.overlay.canvas.className = "overlay";
 
         this.container.appendChild(this.overlay.canvas);
