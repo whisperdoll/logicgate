@@ -50,7 +50,7 @@ define(["require", "exports"], function (require, exports) {
                 },
                 {
                     inputs: [1, 1],
-                    outputs: [1]
+                    outputs: [0]
                 }
             ],
             solution: "",
