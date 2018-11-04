@@ -4,7 +4,7 @@ import { SerializedObject } from "./interfaces";
 
 export class IONode
 {
-    public label : string;
+    private _label : string;
     public onvalueset : Function;
     protected _value : number;
     public outputNodes : IONode[];
@@ -21,9 +21,36 @@ export class IONode
 
     constructor(label : string)
     {
-        this.label = label;
-        this._value = IONode.NO_VALUE;
         this.outputNodes = [];
+        this.label = label;
+        this.value = IONode.NO_VALUE;
+    }
+
+    public get label() : string
+    {
+        return this._label + " (" + this.valueString + ")";
+    }
+
+    public set label(label)
+    {
+        this._label = label;
+    }
+
+    public get rawLabel() : string
+    {
+        return this._label;
+    }
+
+    public get valueString() : string
+    {
+        if (this.value !== IONode.NO_VALUE)
+        {
+            return this.value.toString();
+        }
+        else
+        {
+            return "-";
+        }
     }
 
     public get color() : string
@@ -31,8 +58,8 @@ export class IONode
         switch (this.value)
         {
             case 0: return IONode.COLOR_0;
-            case 1: return IONode.COLOR_1;
-            default: return this.noValueColor;
+            case IONode.NO_VALUE: return this.noValueColor;
+            default: return IONode.COLOR_1;
         }
     }
 
@@ -96,7 +123,7 @@ export class IONode
         let ret = {
             type: isInput ? "inputNode" : "outputNode",
             id: this.id,
-            label: this.label,
+            label: this._label,
             x : 0,
             y : 0,
             outputConnections: []

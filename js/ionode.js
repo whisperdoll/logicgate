@@ -8,16 +8,45 @@ define(["require", "exports"], function (require, exports) {
             this.graphicsNode = null;
             this.id = -1;
             this.parentGate = null;
-            this.label = label;
-            this._value = IONode.NO_VALUE;
             this.outputNodes = [];
+            this.label = label;
+            this.value = IONode.NO_VALUE;
         }
+        Object.defineProperty(IONode.prototype, "label", {
+            get: function () {
+                return this._label + " (" + this.valueString + ")";
+            },
+            set: function (label) {
+                this._label = label;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(IONode.prototype, "rawLabel", {
+            get: function () {
+                return this._label;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(IONode.prototype, "valueString", {
+            get: function () {
+                if (this.value !== IONode.NO_VALUE) {
+                    return this.value.toString();
+                }
+                else {
+                    return "-";
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(IONode.prototype, "color", {
             get: function () {
                 switch (this.value) {
                     case 0: return IONode.COLOR_0;
-                    case 1: return IONode.COLOR_1;
-                    default: return this.noValueColor;
+                    case IONode.NO_VALUE: return this.noValueColor;
+                    default: return IONode.COLOR_1;
                 }
             },
             enumerable: true,
@@ -67,7 +96,7 @@ define(["require", "exports"], function (require, exports) {
             var ret = {
                 type: isInput ? "inputNode" : "outputNode",
                 id: this.id,
-                label: this.label,
+                label: this._label,
                 x: 0,
                 y: 0,
                 outputConnections: []

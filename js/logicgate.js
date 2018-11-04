@@ -1,7 +1,7 @@
 define(["require", "exports", "./gate", "./ui", "./storage"], function (require, exports, gate_1, ui_1, storage_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var VERSION = 3;
+    var VERSION = 4;
     if (storage_1.default.get("version", 0) < VERSION) {
         gate_1.resetCircuits();
         alert("Changes to the application were made that make your previous save data incompatible. Sorry!! But it's gone now");

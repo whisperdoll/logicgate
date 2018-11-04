@@ -111,6 +111,33 @@ define(["require", "exports"], function (require, exports) {
             solved: false,
             description: "<b>Output</b>s 1 if <b>A</b> and <b>B</b> are the same, <b>output</b>s 0 otherwise."
         },
+        IMP: {
+            type: "IMP",
+            label: "IMP",
+            inputs: ["A", "B"],
+            outputs: ["output"],
+            expects: [
+                {
+                    inputs: [0, 0],
+                    outputs: [1]
+                },
+                {
+                    inputs: [0, 1],
+                    outputs: [1]
+                },
+                {
+                    inputs: [1, 0],
+                    outputs: [0]
+                },
+                {
+                    inputs: [1, 1],
+                    outputs: [1]
+                }
+            ],
+            solution: "",
+            solved: false,
+            description: "<b>Output</b>s 1 if <b>A</b> implies <b>B</b> is true, <b>output</b>s 0 otherwise."
+        },
         HAD: {
             type: "HAD",
             label: "HAD",
