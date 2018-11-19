@@ -1,8 +1,9 @@
-import { ShallowGate, loadCircuits, CircuitGate } from "./gate";
+import { loadCircuits, CircuitGate } from "./gate";
 import { hideElement, showElement } from "./utils";
-import challenges, { ChallengeObject } from "./challenges";
 import { BuilderContainer } from "./buildercontainer";
-import { GraphicsGate } from "./graphicsgate";
+import { SandboxContainer } from "./sandboxcontainer";
+import { ChallengeContainer } from "./challengecontainer";
+import { Landing } from "./landing";
 
 export class UI
 {
@@ -10,9 +11,13 @@ export class UI
     public parent : HTMLElement;
     public builderContainer : BuilderContainer;
     public challengeContainer : ChallengeContainer;
+    public sandboxContainer : SandboxContainer;
+    public landing : Landing;
 
-    public static BUILDER : number = 0;
-    public static CHALLENGES : number = 1;
+    public static readonly LANDING : number = 0;
+    public static readonly BUILDER : number = 1;
+    public static readonly CHALLENGES : number = 2;
+    public static readonly SANDBOX : number = 3;
 
     constructor(parent : HTMLElement, resX : number, resY : number)
     {
@@ -22,7 +27,7 @@ export class UI
 
         this.builderContainer = new BuilderContainer(this, resX, resY);
         this.challengeContainer = new ChallengeContainer(this);
-
+        this.landing = new Landing(this);
 
         this.parent.appendChild(this.container);
 
@@ -30,7 +35,7 @@ export class UI
         this.resize();
 
         loadCircuits();
-        this.show(UI.CHALLENGES); // builds it too
+        this.show(UI.LANDING); // builds it too
     }
 
     public show(what : number) : void
@@ -46,6 +51,16 @@ export class UI
                 this.challengeContainer.build();
                 showElement(this.challengeContainer.container);
                 break;
+            case UI.SANDBOX:
+            {
+                let g = new CircuitGate("sandbox", "sandbox");
+                this.builderContainer.loadGate(g);
+                showElement(this.builderContainer.container);
+                break;
+            }
+            case UI.LANDING:
+                showElement(this.landing.container);
+                break;
         }
     }
 
@@ -53,6 +68,8 @@ export class UI
     {
         hideElement(this.builderContainer.container);
         hideElement(this.challengeContainer.container);
+        hideElement(this.landing.container);
+        //hideElement(this.sandboxContainer.container);
     }
 
     public get size() : { width : number, height : number }
@@ -78,71 +95,5 @@ export class UI
 
         this.container.style.transform = "scale(" + scaleX + "," + scaleY + ")";
         //this.overlay.canvas.style.transform = this.container.style.transform;
-    }
-}
-
-export class ChallengeContainer
-{
-    public container : HTMLElement;
-    public headerContainer : HTMLElement;
-    public gateContainer : HTMLElement;
-    public parent : UI;
-
-    constructor(parent : UI)
-    {
-        this.parent = parent;
-
-        this.container = document.createElement("div");
-        this.container.className = "container-challenges";
-
-        this.gateContainer = document.createElement("div");
-        this.gateContainer.className = "container-challenges-gates";
-
-        this.headerContainer = document.createElement("div");
-        this.headerContainer.className = "container-challenges-header";
-
-        let s = document.createElement("div");
-        s.className = "challenges-title";
-        s.innerText = "logic;gate";
-
-        this.headerContainer.appendChild(s);
-
-        this.parent.container.appendChild(this.container);
-        this.container.appendChild(this.headerContainer);
-        this.container.appendChild(this.gateContainer);
-    }
-
-    public addChallenge(challenge : ChallengeObject)
-    {
-        let g = new GraphicsGate(this.parent.builderContainer,
-            new ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
-
-        if (challenge.solved)
-        {
-            g.color = "#CCFFCC";
-        }
-        else
-        {
-            g.color = "#FFCCCC";
-        }
-
-        let e = g.toHTMLElement();
-        e.addEventListener("click", () =>
-        {
-            this.parent.builderContainer.editGate(CircuitGate.ofType(challenge.type));
-            this.parent.show(UI.BUILDER);
-        });
-
-        this.gateContainer.appendChild(e);
-    }
-
-    public build()
-    {
-        this.gateContainer.innerHTML = "";
-
-        for (let type in challenges)
-        {
-            this.addChallenge(challenges[type]);
-        }
     }
 }

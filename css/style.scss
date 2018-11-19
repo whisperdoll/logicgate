@@ -10,6 +10,8 @@
     }
 }
 
+$prettyFont: Helvetica, sans-serif;
+
 html, body
 {
     width: 100%;
@@ -35,6 +37,55 @@ html, body
     left: 0;
     top: 0;
     transform-origin: top left;
+
+    background-image: url("../img/bgl.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+.container-landing
+{
+    color: white;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    font-family: $prettyFont;
+
+    background-color: rgba(0, 0, 0, 0.7);
+
+    .landing-header
+    {
+        position: absolute;
+        left: 50%;
+        top: 10%;
+        transform: translateX(-50%);
+    }
+
+    .landing-button
+    {
+        color: white;
+        position: relative;
+        display: inline-block;
+        left: 50%;
+        top: 60%;
+        transform: translateX(-50%);
+        border: 0;
+        border-radius: 5px;
+        font-weight: bold;
+        background-color: transparent;
+        padding: 8px;
+        font-size: 24px;
+        
+        &:hover
+        {
+            background-color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+    }
 }
 
 .container-challenges
@@ -67,7 +118,7 @@ html, body
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            font-family: Helvetica, sans-serif;
+            font-family: $prettyFont;
             font-size: 20px;
         }
     }
@@ -173,6 +224,7 @@ html, body
             max-height: 70%;
             max-width: 70%;
             text-align: center;
+            padding-bottom: 3em;
 
             .close
             {
@@ -181,7 +233,7 @@ html, body
                 bottom: 8px;
                 background-color: #605fd0;
                 color: white;
-                font-family: Helvetica, sans-serif;
+                font-family: $prettyFont;
                 border: 0;
                 border-radius: 3px;
                 cursor: pointer;
@@ -217,10 +269,24 @@ html, body
         {
             margin-top: 0;
         }
+    }
 
-        .inner
+    .truthTable
+    {
+        border: 1px solid #aaa;
+        border-spacing: 0;
+        border-collapse: collapse;
+        font-family: $prettyFont;
+
+        th, td
         {
-            padding-bottom: 3em;
+            border: 1px solid #aaa;
+            padding: 3px 8px;
+        }
+
+        th
+        {
+            background-color: #eee;
         }
     }
 
@@ -300,7 +366,7 @@ html, body
                 transform: translateX(-50%);
                 bottom: 10%;
                 font-size: 14px;
-                font-family: Helvetica, sans-serif;
+                font-family: $prettyFont;
                 color: white;
             }
 

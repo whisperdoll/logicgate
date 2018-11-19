@@ -83,6 +83,52 @@ define(["require", "exports", "./challenges", "./utils", "./canvas", "./graphics
         return PopupYesNo;
     }(PopupMessage));
     exports.PopupYesNo = PopupYesNo;
+    var TruthTableWidget = (function (_super) {
+        __extends(TruthTableWidget, _super);
+        function TruthTableWidget(parent) {
+            var _this = _super.call(this, parent) || this;
+            _this.table = utils_1.createElement("table", "truthTable");
+            _this.innerContainer.appendChild(_this.table);
+            return _this;
+        }
+        TruthTableWidget.prototype.show = function () {
+            var _this = this;
+            _super.prototype.show.call(this);
+            this.table.innerHTML = "";
+            var oldInputs = this.parent.inputArray;
+            var combos = utils_1.inputCombos(oldInputs.length);
+            var head = utils_1.createElement("tr");
+            this.parent.circuit.forEachInput(function (input) {
+                var th = utils_1.createElement("th");
+                th.innerText = input.rawLabel;
+                head.appendChild(th);
+            });
+            this.parent.circuit.forEachOutput(function (output) {
+                var th = utils_1.createElement("th");
+                th.innerText = output.rawLabel;
+                head.appendChild(th);
+            });
+            this.table.appendChild(head);
+            combos.forEach(function (combo) {
+                _this.parent.inputArray = combo;
+                var row = utils_1.createElement("tr");
+                _this.parent.circuit.forEachInput(function (input) {
+                    var td = utils_1.createElement("td");
+                    td.innerText = input.value.toString();
+                    row.appendChild(td);
+                });
+                _this.parent.circuit.forEachOutput(function (output) {
+                    var td = utils_1.createElement("td");
+                    td.innerText = output.value.toString();
+                    row.appendChild(td);
+                });
+                _this.table.appendChild(row);
+            });
+            this.parent.inputArray = oldInputs;
+        };
+        return TruthTableWidget;
+    }(PopupWidget));
+    exports.TruthTableWidget = TruthTableWidget;
     var GatePanelWidget = (function (_super) {
         __extends(GatePanelWidget, _super);
         function GatePanelWidget(parent) {
@@ -126,6 +172,9 @@ define(["require", "exports", "./challenges", "./utils", "./canvas", "./graphics
         __extends(GateInfoWidget, _super);
         function GateInfoWidget(parent) {
             var _this = _super.call(this, parent) || this;
+            if (!challenges_1.default.hasOwnProperty(_this.parent.circuit.type)) {
+                return _this;
+            }
             var c = challenges_1.default[_this.parent.circuit.type];
             _this.descriptionContainer.innerHTML = c.description;
             c.expects.forEach(function (e, i) {

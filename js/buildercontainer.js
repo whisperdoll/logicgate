@@ -21,7 +21,7 @@ define(["require", "exports", "./builder", "./canvas", "./buildergatelist", "./b
             window.requestAnimationFrame(this.drawReq.bind(this));
             this.parent.container.appendChild(this.container);
         }
-        BuilderContainer.prototype.editGate = function (gate) {
+        BuilderContainer.prototype.loadGate = function (gate) {
             this.builder = new builder_1.Builder(this, gate.clone(), this.resX, this.resY);
         };
         BuilderContainer.prototype.showOverlay = function () {

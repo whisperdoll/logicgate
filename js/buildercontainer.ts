@@ -45,11 +45,12 @@ export class BuilderContainer
         this.parent.container.appendChild(this.container);
     }
 
-    public editGate(gate : CircuitGate) : void
+    public loadGate(gate : CircuitGate) : void
     {
         //this.builder && this.builder.die();
 
         this.builder = new Builder(this, gate.clone(), this.resX, this.resY);
+        // TODO: make toolbar diff
     }
 
     public showOverlay() : void

@@ -1,4 +1,4 @@
-define(["require", "exports", "./gate", "./utils", "./challenges", "./buildercontainer", "./graphicsgate"], function (require, exports, gate_1, utils_1, challenges_1, buildercontainer_1, graphicsgate_1) {
+define(["require", "exports", "./gate", "./utils", "./buildercontainer", "./challengecontainer", "./landing"], function (require, exports, gate_1, utils_1, buildercontainer_1, challengecontainer_1, landing_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var UI = (function () {
@@ -7,12 +7,13 @@ define(["require", "exports", "./gate", "./utils", "./challenges", "./buildercon
             this.container = document.createElement("div");
             this.container.className = "container-ui";
             this.builderContainer = new buildercontainer_1.BuilderContainer(this, resX, resY);
-            this.challengeContainer = new ChallengeContainer(this);
+            this.challengeContainer = new challengecontainer_1.ChallengeContainer(this);
+            this.landing = new landing_1.Landing(this);
             this.parent.appendChild(this.container);
             window.addEventListener("resize", this.resize.bind(this));
             this.resize();
             gate_1.loadCircuits();
-            this.show(UI.CHALLENGES);
+            this.show(UI.LANDING);
         }
         UI.prototype.show = function (what) {
             this.hideAll();
@@ -24,11 +25,22 @@ define(["require", "exports", "./gate", "./utils", "./challenges", "./buildercon
                     this.challengeContainer.build();
                     utils_1.showElement(this.challengeContainer.container);
                     break;
+                case UI.SANDBOX:
+                    {
+                        var g = new gate_1.CircuitGate("sandbox", "sandbox");
+                        this.builderContainer.loadGate(g);
+                        utils_1.showElement(this.builderContainer.container);
+                        break;
+                    }
+                case UI.LANDING:
+                    utils_1.showElement(this.landing.container);
+                    break;
             }
         };
         UI.prototype.hideAll = function () {
             utils_1.hideElement(this.builderContainer.container);
             utils_1.hideElement(this.challengeContainer.container);
+            utils_1.hideElement(this.landing.container);
         };
         Object.defineProperty(UI.prototype, "size", {
             get: function () {
@@ -54,51 +66,11 @@ define(["require", "exports", "./gate", "./utils", "./challenges", "./buildercon
             var scaleY = h / size.height;
             this.container.style.transform = "scale(" + scaleX + "," + scaleY + ")";
         };
-        UI.BUILDER = 0;
-        UI.CHALLENGES = 1;
+        UI.LANDING = 0;
+        UI.BUILDER = 1;
+        UI.CHALLENGES = 2;
+        UI.SANDBOX = 3;
         return UI;
     }());
     exports.UI = UI;
-    var ChallengeContainer = (function () {
-        function ChallengeContainer(parent) {
-            this.parent = parent;
-            this.container = document.createElement("div");
-            this.container.className = "container-challenges";
-            this.gateContainer = document.createElement("div");
-            this.gateContainer.className = "container-challenges-gates";
-            this.headerContainer = document.createElement("div");
-            this.headerContainer.className = "container-challenges-header";
-            var s = document.createElement("div");
-            s.className = "challenges-title";
-            s.innerText = "logic;gate";
-            this.headerContainer.appendChild(s);
-            this.parent.container.appendChild(this.container);
-            this.container.appendChild(this.headerContainer);
-            this.container.appendChild(this.gateContainer);
-        }
-        ChallengeContainer.prototype.addChallenge = function (challenge) {
-            var _this = this;
-            var g = new graphicsgate_1.GraphicsGate(this.parent.builderContainer, new gate_1.ShallowGate(challenge.label, challenge.inputs.length, challenge.outputs.length));
-            if (challenge.solved) {
-                g.color = "#CCFFCC";
-            }
-            else {
-                g.color = "#FFCCCC";
-            }
-            var e = g.toHTMLElement();
-            e.addEventListener("click", function () {
-                _this.parent.builderContainer.editGate(gate_1.CircuitGate.ofType(challenge.type));
-                _this.parent.show(UI.BUILDER);
-            });
-            this.gateContainer.appendChild(e);
-        };
-        ChallengeContainer.prototype.build = function () {
-            this.gateContainer.innerHTML = "";
-            for (var type in challenges_1.default) {
-                this.addChallenge(challenges_1.default[type]);
-            }
-        };
-        return ChallengeContainer;
-    }());
-    exports.ChallengeContainer = ChallengeContainer;
 });

@@ -11,6 +11,8 @@ export function resetCircuits()
     {
         Storage.set(type, null);
     }
+    
+    Storage.set("sandbox", null);
 }
 
 export function loadCircuits()
@@ -458,60 +460,34 @@ export class CircuitGate extends Gate
                 let n = ret.addOutput(new IONode(c.label), c.id);
                 map.set(n, c);
             }
-            else if (c.type === "ONE")
-            {
-                let g = new OneGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
-            else if (c.type === "ZERO")
-            {
-                let g = new ZeroGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
-            else if (c.type === "AND")
-            {
-                let g = new ANDGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
-            else if (c.type === "OR")
-            {
-                let g = new ORGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
-            else if (c.type === "NOT")
-            {
-                let g = new NOTGate();
-                g.x = c.x;
-                g.y = c.y;
-
-                ret.addGate(g, c.id);
-                map.set(g, c);
-            }
             else
             {
-                if (!challenges[c.type])
+                let g;
+                
+                switch (c.type)
                 {
-                    throw "no gate/circuit/w.e with type "
-                        + c.type + " was found sorry";
+                    case "BUILTIN_ONE": g = new OneGate(); break;
+                    case "BUILTIN_ZERO": g = new ZeroGate(); break;
+                    case "BUILTIN_AND": g = new ANDGate(); break;
+                    case "BUILTIN_NAND": g = new NANDGate(); break;
+                    case "BUILTIN_OR": g = new ORGate(); break;
+                    case "BUILTIN_NOR": g = new NORGate(); break;
+                    case "BUILTIN_XOR": g = new XORGate(); break;
+                    case "BUILTIN_NXOR": g = new NXORGate(); break;
+                    case "BUILTIN_NOT": g = new NOTGate(); break;
+                    default:
+                    {
+                        if (!challenges[c.type])
+                        {
+                            throw "no gate/circuit/w.e with type "
+                                + c.type + " was found sorry";
+                        }
+
+                        g = CircuitGate.ofType(c.type);
+                        break;
+                    }
                 }
 
-                let g = CircuitGate.ofType(c.type);
                 g.x = c.x;
                 g.y = c.y;
 
@@ -574,7 +550,7 @@ export class OneGate extends ConstantGate
 {
     constructor()
     {
-        super("ONE", "1");
+        super("BUILTIN_ONE", "1");
         this.outputNodes[0].value = 1;
     }
 
@@ -588,7 +564,7 @@ export class ZeroGate extends ConstantGate
 {
     constructor()
     {
-        super("ZERO", "0");
+        super("BUILTIN_ZERO", "0");
         this.outputNodes[0].value = 0;
     }
 
@@ -602,7 +578,7 @@ export class NOTGate extends CircuitGate
 {
     constructor()
     {
-        super("NOT", "NOT");
+        super("BUILTIN_NOT", "NOT");
 
         this.addInput(new IONode("input"));
         this.addOutput(new IONode("output"));
@@ -666,7 +642,7 @@ export class ANDGate extends OpGate
 {
     constructor()
     {
-        super("AND", "AND");
+        super("BUILTIN_AND", "AND");
     }
 
     protected gateFn() : number
@@ -684,7 +660,7 @@ export class ORGate extends OpGate
 {
     constructor()
     {
-        super("OR", "OR");
+        super("BUILTIN_OR", "OR");
     }
 
     protected gateFn() : number
@@ -695,6 +671,78 @@ export class ORGate extends OpGate
     public clone() : CircuitGate
     {
         return new ORGate();
+    }
+}
+
+export class NANDGate extends OpGate
+{
+    constructor()
+    {
+        super("BUILTIN_NAND", "NAND");
+    }
+
+    protected gateFn() : number
+    {
+        return (this.inputNodes[0].value & this.inputNodes[1].value) ^ 1;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new NANDGate();
+    }
+}
+
+export class NORGate extends OpGate
+{
+    constructor()
+    {
+        super("BUILTIN_NOR", "NOR");
+    }
+
+    protected gateFn() : number
+    {
+        return (this.inputNodes[0].value | this.inputNodes[1].value) ^ 1;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new NORGate();
+    }
+}
+
+export class XORGate extends OpGate
+{
+    constructor()
+    {
+        super("BUILTIN_XOR", "XOR");
+    }
+
+    protected gateFn() : number
+    {
+        return this.inputNodes[0].value ^ this.inputNodes[1].value;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new XORGate();
+    }
+}
+
+export class NXORGate extends OpGate
+{
+    constructor()
+    {
+        super("BUILTIN_NXOR", "NXOR");
+    }
+
+    protected gateFn() : number
+    {
+        return (this.inputNodes[0].value ^ this.inputNodes[1].value) ^ 1;
+    }
+
+    public clone() : CircuitGate
+    {
+        return new NXORGate();
     }
 }
 

@@ -18,6 +18,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
         for (var type in challenges_1.default) {
             storage_1.default.set(type, null);
         }
+        storage_1.default.set("sandbox", null);
     }
     exports.resetCircuits = resetCircuits;
     function loadCircuits() {
@@ -321,47 +322,46 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
                     var n = ret.addOutput(new ionode_1.IONode(c.label), c.id);
                     map.set(n, c);
                 }
-                else if (c.type === "ONE") {
-                    var g = new OneGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
-                else if (c.type === "ZERO") {
-                    var g = new ZeroGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
-                else if (c.type === "AND") {
-                    var g = new ANDGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
-                else if (c.type === "OR") {
-                    var g = new ORGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
-                else if (c.type === "NOT") {
-                    var g = new NOTGate();
-                    g.x = c.x;
-                    g.y = c.y;
-                    ret.addGate(g, c.id);
-                    map.set(g, c);
-                }
                 else {
-                    if (!challenges_1.default[c.type]) {
-                        throw "no gate/circuit/w.e with type "
-                            + c.type + " was found sorry";
+                    var g = void 0;
+                    switch (c.type) {
+                        case "BUILTIN_ONE":
+                            g = new OneGate();
+                            break;
+                        case "BUILTIN_ZERO":
+                            g = new ZeroGate();
+                            break;
+                        case "BUILTIN_AND":
+                            g = new ANDGate();
+                            break;
+                        case "BUILTIN_NAND":
+                            g = new NANDGate();
+                            break;
+                        case "BUILTIN_OR":
+                            g = new ORGate();
+                            break;
+                        case "BUILTIN_NOR":
+                            g = new NORGate();
+                            break;
+                        case "BUILTIN_XOR":
+                            g = new XORGate();
+                            break;
+                        case "BUILTIN_NXOR":
+                            g = new NXORGate();
+                            break;
+                        case "BUILTIN_NOT":
+                            g = new NOTGate();
+                            break;
+                        default:
+                            {
+                                if (!challenges_1.default[c.type]) {
+                                    throw "no gate/circuit/w.e with type "
+                                        + c.type + " was found sorry";
+                                }
+                                g = CircuitGate.ofType(c.type);
+                                break;
+                            }
                     }
-                    var g = CircuitGate.ofType(c.type);
                     g.x = c.x;
                     g.y = c.y;
                     ret.addGate(g, c.id);
@@ -413,7 +413,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
     var OneGate = (function (_super) {
         __extends(OneGate, _super);
         function OneGate() {
-            var _this = _super.call(this, "ONE", "1") || this;
+            var _this = _super.call(this, "BUILTIN_ONE", "1") || this;
             _this.outputNodes[0].value = 1;
             return _this;
         }
@@ -426,7 +426,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
     var ZeroGate = (function (_super) {
         __extends(ZeroGate, _super);
         function ZeroGate() {
-            var _this = _super.call(this, "ZERO", "0") || this;
+            var _this = _super.call(this, "BUILTIN_ZERO", "0") || this;
             _this.outputNodes[0].value = 0;
             return _this;
         }
@@ -439,7 +439,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
     var NOTGate = (function (_super) {
         __extends(NOTGate, _super);
         function NOTGate() {
-            var _this = _super.call(this, "NOT", "NOT") || this;
+            var _this = _super.call(this, "BUILTIN_NOT", "NOT") || this;
             _this.addInput(new ionode_1.IONode("input"));
             _this.addOutput(new ionode_1.IONode("output"));
             return _this;
@@ -489,7 +489,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
     var ANDGate = (function (_super) {
         __extends(ANDGate, _super);
         function ANDGate() {
-            return _super.call(this, "AND", "AND") || this;
+            return _super.call(this, "BUILTIN_AND", "AND") || this;
         }
         ANDGate.prototype.gateFn = function () {
             return this.inputNodes[0].value & this.inputNodes[1].value;
@@ -503,7 +503,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
     var ORGate = (function (_super) {
         __extends(ORGate, _super);
         function ORGate() {
-            return _super.call(this, "OR", "OR") || this;
+            return _super.call(this, "BUILTIN_OR", "OR") || this;
         }
         ORGate.prototype.gateFn = function () {
             return this.inputNodes[0].value | this.inputNodes[1].value;
@@ -514,6 +514,62 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
         return ORGate;
     }(OpGate));
     exports.ORGate = ORGate;
+    var NANDGate = (function (_super) {
+        __extends(NANDGate, _super);
+        function NANDGate() {
+            return _super.call(this, "BUILTIN_NAND", "NAND") || this;
+        }
+        NANDGate.prototype.gateFn = function () {
+            return (this.inputNodes[0].value & this.inputNodes[1].value) ^ 1;
+        };
+        NANDGate.prototype.clone = function () {
+            return new NANDGate();
+        };
+        return NANDGate;
+    }(OpGate));
+    exports.NANDGate = NANDGate;
+    var NORGate = (function (_super) {
+        __extends(NORGate, _super);
+        function NORGate() {
+            return _super.call(this, "BUILTIN_NOR", "NOR") || this;
+        }
+        NORGate.prototype.gateFn = function () {
+            return (this.inputNodes[0].value | this.inputNodes[1].value) ^ 1;
+        };
+        NORGate.prototype.clone = function () {
+            return new NORGate();
+        };
+        return NORGate;
+    }(OpGate));
+    exports.NORGate = NORGate;
+    var XORGate = (function (_super) {
+        __extends(XORGate, _super);
+        function XORGate() {
+            return _super.call(this, "BUILTIN_XOR", "XOR") || this;
+        }
+        XORGate.prototype.gateFn = function () {
+            return this.inputNodes[0].value ^ this.inputNodes[1].value;
+        };
+        XORGate.prototype.clone = function () {
+            return new XORGate();
+        };
+        return XORGate;
+    }(OpGate));
+    exports.XORGate = XORGate;
+    var NXORGate = (function (_super) {
+        __extends(NXORGate, _super);
+        function NXORGate() {
+            return _super.call(this, "BUILTIN_NXOR", "NXOR") || this;
+        }
+        NXORGate.prototype.gateFn = function () {
+            return (this.inputNodes[0].value ^ this.inputNodes[1].value) ^ 1;
+        };
+        NXORGate.prototype.clone = function () {
+            return new NXORGate();
+        };
+        return NXORGate;
+    }(OpGate));
+    exports.NXORGate = NXORGate;
     var ShallowGate = (function (_super) {
         __extends(ShallowGate, _super);
         function ShallowGate(label, numInputs, numOutputs) {

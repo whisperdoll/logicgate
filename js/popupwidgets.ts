@@ -1,5 +1,5 @@
 import challenges, { ChallengeExpectation } from "./challenges";
-import { cloneJSON, showElement, hideElement } from "./utils";
+import { cloneJSON, showElement, hideElement, inputCombos, createElement } from "./utils";
 import { Builder } from "./builder";
 import { IONode } from "./ionode";
 import { Canvas } from "./canvas";
@@ -95,6 +95,66 @@ export class PopupYesNo extends PopupMessage
     }
 }
 
+export class TruthTableWidget extends PopupWidget
+{
+    private table : HTMLElement;
+
+    constructor(parent : Builder)
+    {
+        super(parent);
+        this.table = createElement("table", "truthTable");
+        this.innerContainer.appendChild(this.table);
+    }
+
+    show()
+    {
+        super.show();
+
+        this.table.innerHTML = "";
+        
+        let oldInputs = this.parent.inputArray;
+        let combos = inputCombos(oldInputs.length);
+        
+        let head = createElement("tr");
+        this.parent.circuit.forEachInput((input : IONode) =>
+        {
+            let th = createElement("th");
+            th.innerText = input.rawLabel;
+            head.appendChild(th);
+        });
+        this.parent.circuit.forEachOutput((output : IONode) =>
+        {
+            let th = createElement("th");
+            th.innerText = output.rawLabel;
+            head.appendChild(th);
+        });
+        this.table.appendChild(head);
+
+        combos.forEach((combo : number[]) =>
+        {
+            this.parent.inputArray = combo;
+
+            let row = createElement("tr");
+            this.parent.circuit.forEachInput((input : IONode) =>
+            {
+                let td = createElement("td");
+                td.innerText = input.value.toString();
+                row.appendChild(td);
+            });
+            this.parent.circuit.forEachOutput((output : IONode) =>
+            {
+                let td = createElement("td");
+                td.innerText = output.value.toString();
+                row.appendChild(td);
+            });
+
+            this.table.appendChild(row);
+        });
+
+        this.parent.inputArray = oldInputs;
+    }
+}
+
 export class GatePanelWidget extends PopupWidget
 {
     public panelContainer : HTMLElement;
@@ -155,6 +215,11 @@ export class GateInfoWidget extends GatePanelWidget
     constructor(parent : Builder)
     {
         super(parent);
+
+        if (!challenges.hasOwnProperty(this.parent.circuit.type))
+        {
+            return;
+        }
 
         let c = challenges[this.parent.circuit.type];
         this.descriptionContainer.innerHTML = c.description;

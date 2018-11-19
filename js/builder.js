@@ -25,6 +25,7 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             this.container.className = "builder";
             parent.container.appendChild(this.container);
             this.gateInfoWidget = new popupwidgets_1.GateInfoWidget(this);
+            this.truthTableWidget = new popupwidgets_1.TruthTableWidget(this);
             this.gateErrorWidget = new popupwidgets_1.GateErrorWidget(this);
             this.saveWidget = new popupwidgets_1.PopupYesNo(this, "Save?", "Do you want to save your work before exiting?", function () { _this.save(); _this.exit(true); }, function () { return _this.exit(true); });
             this.successWidget = new popupwidgets_1.PopupMessage(this, "Success!", "Good job! This circuit is now usable as a gate in other circuits!");
@@ -61,6 +62,9 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             this.parent.container.removeChild(this.container);
         };
         Builder.prototype.reset = function () {
+            if (!challenges_1.default.hasOwnProperty(this.circuit.type)) {
+                return;
+            }
             var c = challenges_1.default[this.circuit.type];
             var inputs = c.expects[0].inputs;
             this.circuit.forEachInput(function (input, i) {
@@ -82,8 +86,10 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             configurable: true
         });
         Builder.prototype.addNode = function (label, input, id) {
-            if (id === void 0) { id = -1; }
             var n = this.circuit.addNode(new ionode_1.IONode(label), input, id);
+            if (input) {
+                n.value = 0;
+            }
             n.graphicsNode = new graphicsnode_1.GraphicsNode(this.parent, n);
             this.organizeNodes();
             this.saved = false;
@@ -92,6 +98,18 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             this.circuit.removeNode(node.node, isInput);
             this.organizeNodes();
             this.saved = false;
+        };
+        Builder.prototype.removeInputNodeAtIndex = function (index) {
+            this.removeNode(this.circuit.getInput(index).graphicsNode, true);
+        };
+        Builder.prototype.removeLastInputNode = function () {
+            this.removeInputNodeAtIndex(this.circuit.numInputs - 1);
+        };
+        Builder.prototype.removeOutputNodeAtIndex = function (index) {
+            this.removeNode(this.circuit.getOutput(index).graphicsNode, true);
+        };
+        Builder.prototype.removeLastOutputNode = function () {
+            this.removeOutputNodeAtIndex(this.circuit.numOutputs - 1);
         };
         Builder.prototype.addGate = function (gate, id) {
             var g = this.circuit.addGate(gate, id);
@@ -124,6 +142,22 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             var g = this.circuit.gateWithNode(node);
             return g ? g.graphicsGate : null;
         };
+        Object.defineProperty(Builder.prototype, "inputArray", {
+            get: function () {
+                var ret = [];
+                this.circuit.forEachInput(function (node) {
+                    ret.push(node.value);
+                });
+                return ret;
+            },
+            set: function (array) {
+                this.circuit.forEachInput(function (node, i) {
+                    node.value = array[i];
+                });
+            },
+            enumerable: true,
+            configurable: true
+        });
         Builder.prototype.draw = function () {
             var _this = this;
             this.canvas.clear();

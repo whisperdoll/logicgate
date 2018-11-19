@@ -4,7 +4,7 @@ import { IONode } from "./ionode"
 import { UI } from "./ui";
 import challenges, { ChallengeExpectation } from "./challenges";
 import Storage from "./storage"
-import { GateInfoWidget, GateErrorWidget, PopupMessage, PopupYesNo } from "./popupwidgets";
+import { GateInfoWidget, GateErrorWidget, PopupMessage, PopupYesNo, TruthTableWidget } from "./popupwidgets";
 import { GraphicsNode } from "./graphicsnode";
 import { GraphicsGate } from "./graphicsgate";
 import { BuilderContainer } from "./buildercontainer";
@@ -33,6 +33,7 @@ export class Builder
     public gateErrorWidget : GateErrorWidget;
     public successWidget : PopupMessage;
     public saveWidget : PopupYesNo;
+    public truthTableWidget : TruthTableWidget;
 
     constructor(parent : BuilderContainer, circuit : CircuitGate, width : number, height : number)
     {
@@ -63,6 +64,7 @@ export class Builder
         parent.container.appendChild(this.container);
 
         this.gateInfoWidget = new GateInfoWidget(this);
+        this.truthTableWidget = new TruthTableWidget(this);
         this.gateErrorWidget = new GateErrorWidget(this);
         this.saveWidget = new PopupYesNo(this, "Save?",
             "Do you want to save your work before exiting?",
@@ -121,6 +123,11 @@ export class Builder
 
     public reset() : void
     {
+        if (!challenges.hasOwnProperty(this.circuit.type))
+        {
+            return;
+        }
+
         let c = challenges[this.circuit.type];
         let inputs = c.expects[0].inputs;
 
@@ -140,19 +147,45 @@ export class Builder
         return this.canvas.width;
     }
 
-    public addNode(label : string, input : boolean, id : number = -1)
+    public addNode(label : string, input : boolean, id? : number)
     {
         let n = this.circuit.addNode(new IONode(label), input, id);
+
+        if (input)
+        {
+            n.value = 0;
+        }
+
         n.graphicsNode = new GraphicsNode(this.parent, n);
         this.organizeNodes();
         this.saved = false;
     }
 
-    public removeNode(node : GraphicsNode, isInput : boolean)
+    public removeNode(node : GraphicsNode, isInput : boolean) : void
     {
         this.circuit.removeNode(node.node, isInput);
         this.organizeNodes();
         this.saved = false;
+    }
+
+    public removeInputNodeAtIndex(index : number) : void
+    {
+        this.removeNode(this.circuit.getInput(index).graphicsNode, true);
+    }
+
+    public removeLastInputNode() : void
+    {
+        this.removeInputNodeAtIndex(this.circuit.numInputs - 1);
+    }
+
+    public removeOutputNodeAtIndex(index : number) : void
+    {
+        this.removeNode(this.circuit.getOutput(index).graphicsNode, true);
+    }
+
+    public removeLastOutputNode() : void
+    {
+        this.removeOutputNodeAtIndex(this.circuit.numOutputs - 1);
     }
 
     public addGate(gate : CircuitGate, id? : number) : GraphicsGate
@@ -199,6 +232,26 @@ export class Builder
     {
         let g = this.circuit.gateWithNode(node);
         return g ? g.graphicsGate : null;
+    }
+
+    public get inputArray() : number[]
+    {
+        let ret = [];
+
+        this.circuit.forEachInput((node : IONode) =>
+        {
+            ret.push(node.value);
+        });
+
+        return ret;
+    }
+
+    public set inputArray(array : number[])
+    {
+        this.circuit.forEachInput((node : IONode, i : number) =>
+        {
+            node.value = array[i];
+        });
     }
 
     public draw() : void
