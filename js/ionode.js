@@ -86,10 +86,23 @@ define(["require", "exports"], function (require, exports) {
             return ret;
         };
         IONode.prototype.disconnect = function (node) {
-            var i = this.outputNodes.indexOf(node);
-            if (i !== -1) {
-                this.outputNodes.splice(i, 1);
-                node.inputNode = null;
+            this.disconnectAt(this.outputNodes.indexOf(node));
+        };
+        IONode.prototype.disconnectAt = function (index) {
+            if (index < 0 || index >= this.outputNodes.length) {
+                return;
+            }
+            var node = this.outputNodes[index];
+            this.outputNodes.splice(index, 1);
+            node.inputNode = null;
+            node.value = IONode.NO_VALUE;
+        };
+        IONode.prototype.clearAllConnections = function () {
+            while (this.outputNodes.length > 0) {
+                this.disconnectAt(0);
+            }
+            if (this.inputNode) {
+                this.inputNode.disconnect(this);
             }
         };
         IONode.prototype.serialize = function (isInput) {

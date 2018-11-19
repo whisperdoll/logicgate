@@ -105,9 +105,11 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
         };
         Gate.prototype.removeInput = function (input) {
             var n = this.inputNodes.splice(this.inputNodes.indexOf(input), 1)[0];
+            n.clearAllConnections();
         };
         Gate.prototype.removeOutput = function (output) {
             var n = this.outputNodes.splice(this.outputNodes.indexOf(output), 1)[0];
+            n.clearAllConnections();
         };
         Gate.prototype.removeNode = function (node, isInput) {
             if (isInput) {
@@ -167,6 +169,11 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
             }
             return counter;
         };
+        Gate.prototype.clearAllConnections = function () {
+            this.forEachNode(function (node) {
+                node.clearAllConnections();
+            });
+        };
         return Gate;
     }());
     exports.Gate = Gate;
@@ -202,18 +209,7 @@ define(["require", "exports", "./ionode", "./challenges", "./storage", "./utils"
         };
         CircuitGate.prototype.removeGate = function (gate) {
             var g = this.gates.splice(this.gates.indexOf(gate), 1)[0];
-            g.outputNodes.forEach(function (onode) {
-                while (onode.outputNodes.length > 0) {
-                    var inode = onode.outputNodes[0];
-                    onode.disconnect(inode);
-                    inode.value = ionode_1.IONode.NO_VALUE;
-                }
-            });
-            g.inputNodes.forEach(function (inode) {
-                if (inode.inputNode) {
-                    inode.inputNode.disconnect(inode);
-                }
-            });
+            g.clearAllConnections();
         };
         CircuitGate.prototype.forEachGate = function (fn) {
             var ret = [];

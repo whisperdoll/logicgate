@@ -55,7 +55,7 @@ html, body
     margin: 0;
     font-family: $prettyFont;
 
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.9);
 
     .landing-header
     {
@@ -69,7 +69,7 @@ html, body
     {
         color: white;
         position: relative;
-        display: inline-block;
+        display: block;
         left: 50%;
         top: 60%;
         transform: translateX(-50%);
@@ -110,6 +110,24 @@ html, body
         width: 100%;
         height: $header-height;
         background-color: rgba(0,0,0,0.9);
+        font-weight: bold;
+
+        .challenges-back
+        {
+            color: white;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            cursor: pointer;
+
+            span
+            {
+                font-family: $prettyFont;
+                font-weight: bold;
+            }
+        }
 
         .challenges-title
         {
@@ -348,6 +366,7 @@ html, body
             cursor: pointer;
             position: relative;
             background-color: transparent;
+            user-select: none;
 
             i
             {

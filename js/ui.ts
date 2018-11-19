@@ -55,6 +55,8 @@ export class UI
             {
                 let g = new CircuitGate("sandbox", "sandbox");
                 this.builderContainer.loadGate(g);
+                this.builderContainer.toolbar.buttonPress_addInput();
+                this.builderContainer.toolbar.buttonPress_addOutput();
                 showElement(this.builderContainer.container);
                 break;
             }

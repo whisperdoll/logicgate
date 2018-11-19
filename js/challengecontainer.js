@@ -3,6 +3,7 @@ define(["require", "exports", "./challenges", "./graphicsgate", "./gate", "./ui"
     Object.defineProperty(exports, "__esModule", { value: true });
     var ChallengeContainer = (function () {
         function ChallengeContainer(parent) {
+            var _this = this;
             this.parent = parent;
             this.container = document.createElement("div");
             this.container.className = "container-challenges";
@@ -14,6 +15,11 @@ define(["require", "exports", "./challenges", "./graphicsgate", "./gate", "./ui"
             s.className = "challenges-title";
             s.innerText = "Challenges";
             this.headerContainer.appendChild(s);
+            var b = document.createElement("i");
+            b.className = "challenges-back fas fa-arrow-left";
+            b.innerHTML = "<span>&nbsp;&nbsp;Back</span>";
+            b.addEventListener("click", function () { return _this.parent.show(ui_1.UI.LANDING); });
+            this.headerContainer.appendChild(b);
             this.parent.container.appendChild(this.container);
             this.container.appendChild(this.headerContainer);
             this.container.appendChild(this.gateContainer);

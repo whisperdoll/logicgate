@@ -39,7 +39,12 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             }
             else {
                 this.die();
-                this.parent.parent.show(ui_1.UI.CHALLENGES);
+                if (this.circuit.type === "sandbox") {
+                    this.parent.parent.show(ui_1.UI.LANDING);
+                }
+                else {
+                    this.parent.parent.show(ui_1.UI.CHALLENGES);
+                }
             }
         };
         Builder.prototype.build = function () {
@@ -54,7 +59,6 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             this.organizeNodes();
         };
         Builder.prototype.die = function () {
-            console.log(this.parent.container);
             this.parent.container.removeChild(this.gateErrorWidget.container);
             this.parent.container.removeChild(this.gateInfoWidget.container);
             this.parent.container.removeChild(this.saveWidget.container);
@@ -106,7 +110,7 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             this.removeInputNodeAtIndex(this.circuit.numInputs - 1);
         };
         Builder.prototype.removeOutputNodeAtIndex = function (index) {
-            this.removeNode(this.circuit.getOutput(index).graphicsNode, true);
+            this.removeNode(this.circuit.getOutput(index).graphicsNode, false);
         };
         Builder.prototype.removeLastOutputNode = function () {
             this.removeOutputNodeAtIndex(this.circuit.numOutputs - 1);
@@ -293,12 +297,19 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
             else if (this.connectingNode) {
                 var h = this.hoveredGate();
                 if (h) {
-                    this.connectingNode.node.connect(h.gate.getInput(h.getConnectingInput(y)));
+                    var destNode = h.gate.getInput(h.getConnectingInput(y));
+                    var o = this.connectingNode.node.connect(destNode);
                     this.saved = false;
+                    if (!o.success) {
+                        this.connectingNode.node.disconnect(destNode);
+                    }
                 }
                 else if (n = this.circuit.forEachOutput(function (node) { return node.graphicsNode.containsPoint(x, y); })[0]) {
-                    this.connectingNode.node.connect(n);
+                    var o = this.connectingNode.node.connect(n);
                     this.saved = false;
+                    if (!o.success) {
+                        this.connectingNode.node.disconnect(n);
+                    }
                 }
             }
             this.connectingGate = null;

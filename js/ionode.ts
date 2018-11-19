@@ -110,11 +110,32 @@ export class IONode
 
     public disconnect(node : IONode)
     {
-        let i = this.outputNodes.indexOf(node);
-        if (i !== -1)
+        this.disconnectAt(this.outputNodes.indexOf(node));
+    }
+
+    public disconnectAt(index : number)
+    {
+        if (index < 0 || index >= this.outputNodes.length)
         {
-            this.outputNodes.splice(i, 1);
-            node.inputNode = null;
+            return;
+        }
+
+        let node = this.outputNodes[index];
+        this.outputNodes.splice(index, 1);
+        node.inputNode = null;
+        node.value = IONode.NO_VALUE;
+    }
+
+    public clearAllConnections()
+    {
+        while (this.outputNodes.length > 0)
+        {
+            this.disconnectAt(0);
+        }
+
+        if (this.inputNode)
+        {
+            this.inputNode.disconnect(this);
         }
     }
 

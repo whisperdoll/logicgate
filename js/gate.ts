@@ -136,11 +136,13 @@ export class Gate
     public removeInput(input : IONode) : void
     {
         let n = this.inputNodes.splice(this.inputNodes.indexOf(input), 1)[0];
+        n.clearAllConnections();
     }
 
     public removeOutput(output : IONode) : void
     {
         let n = this.outputNodes.splice(this.outputNodes.indexOf(output), 1)[0];
+        n.clearAllConnections();
     }
 
     public removeNode(node : IONode, isInput : boolean) : void
@@ -229,6 +231,14 @@ export class Gate
 
         return counter;
     }
+
+    public clearAllConnections() : void
+    {
+        this.forEachNode(node =>
+        {
+            node.clearAllConnections();
+        });
+    }
 }
 
 export class CircuitGate extends Gate
@@ -282,24 +292,7 @@ export class CircuitGate extends Gate
     public removeGate(gate : CircuitGate) : void
     {
         let g = this.gates.splice(this.gates.indexOf(gate), 1)[0];
-
-        g.outputNodes.forEach(onode =>
-        {
-            while (onode.outputNodes.length > 0) {
-                let inode = onode.outputNodes[0];
-                onode.disconnect(inode);
-                inode.value = IONode.NO_VALUE;
-                //inode.propagate();
-            }
-        });
-
-        g.inputNodes.forEach(inode =>
-        {
-            if (inode.inputNode)
-            {
-                inode.inputNode.disconnect(inode);
-            }
-        });
+        g.clearAllConnections();
     }
 
     public forEachGate(fn : Function) : CircuitGate[]

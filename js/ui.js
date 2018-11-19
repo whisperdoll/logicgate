@@ -29,6 +29,8 @@ define(["require", "exports", "./gate", "./utils", "./buildercontainer", "./chal
                     {
                         var g = new gate_1.CircuitGate("sandbox", "sandbox");
                         this.builderContainer.loadGate(g);
+                        this.builderContainer.toolbar.buttonPress_addInput();
+                        this.builderContainer.toolbar.buttonPress_addOutput();
                         utils_1.showElement(this.builderContainer.container);
                         break;
                     }

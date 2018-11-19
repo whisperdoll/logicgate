@@ -42,7 +42,7 @@ define(["require", "exports"], function (require, exports) {
     }
     function inputCombos(length) {
         var ret = [];
-        var iterations = length * length;
+        var iterations = Math.pow(2, length);
         for (var i = 0; i < iterations; i++) {
             ret.push(numberToBinaryArray(i, length));
         }

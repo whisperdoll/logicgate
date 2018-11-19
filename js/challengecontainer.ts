@@ -26,8 +26,13 @@ export class ChallengeContainer
         let s = document.createElement("div");
         s.className = "challenges-title";
         s.innerText = "Challenges";
-
         this.headerContainer.appendChild(s);
+
+        let b = document.createElement("i");
+        b.className = "challenges-back fas fa-arrow-left";
+        b.innerHTML = "<span>&nbsp;&nbsp;Back</span>";
+        b.addEventListener("click", () => this.parent.show(UI.LANDING));
+        this.headerContainer.appendChild(b);
 
         this.parent.container.appendChild(this.container);
         this.container.appendChild(this.headerContainer);

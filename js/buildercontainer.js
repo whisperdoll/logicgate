@@ -23,6 +23,8 @@ define(["require", "exports", "./builder", "./canvas", "./buildergatelist", "./b
         }
         BuilderContainer.prototype.loadGate = function (gate) {
             this.builder = new builder_1.Builder(this, gate.clone(), this.resX, this.resY);
+            this.container.removeChild(this.toolbar.container);
+            this.toolbar = new buildertoolbar_1.Toolbar(this, gate.type === "sandbox");
         };
         BuilderContainer.prototype.showOverlay = function () {
             this.overlay.canvas.style["z-index"] = 1;

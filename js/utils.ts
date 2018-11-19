@@ -53,7 +53,7 @@ export function inputCombos(length : number) : number[][]
 {
     let ret = [];
     
-    let iterations = length * length;
+    let iterations = Math.pow(2, length);
     
     for (let i = 0; i < iterations; i++)
     {

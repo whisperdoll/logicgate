@@ -50,7 +50,8 @@ export class BuilderContainer
         //this.builder && this.builder.die();
 
         this.builder = new Builder(this, gate.clone(), this.resX, this.resY);
-        // TODO: make toolbar diff
+        this.container.removeChild(this.toolbar.container);
+        this.toolbar = new Toolbar(this, gate.type === "sandbox");
     }
 
     public showOverlay() : void
