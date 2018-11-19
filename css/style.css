@@ -254,13 +254,14 @@ html, body {
   height: 100%;
   width: 54px;
 }
-.container-builder .toolbar .toolbar-button img {
+.container-builder .toolbar .toolbar-button i {
   position: absolute;
   left: 50%;
   top: 15%;
   transform: translateX(-50%);
-  height: 40%;
-  width: 40%;
+  color: white;
+  text-align: center;
+  font-size: 20px;
 }
 .container-builder .toolbar .toolbar-button div {
   position: absolute;

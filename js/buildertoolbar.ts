@@ -13,25 +13,25 @@ export class Toolbar
         this.parent = parent;
         parent.container.appendChild(this.container);
 
-        this.makeButton("img/back.png", "Back", () =>
+        this.makeButton("arrow-left", "Back", () =>
         {
             this.parent.builder.exit();
         });
 
         if (!sandbox)
         {
-            this.makeButton("img/play.png", "Test", ()=>
+            this.makeButton("play", "Test", ()=>
             {
                 this.parent.builder.test();
             });
         }
         else
         {
-            this.makeButton("img/minus.png", "Input", () =>
+            this.makeButton("minus", "Input", () =>
             {
                 this.parent.builder.removeLastInputNode();
             });
-            this.makeButton("img/plus.png", "Input", () =>
+            this.makeButton("plus", "Input", () =>
             {
                 let inputNo : number = this.parent.builder.circuit.numInputs + 1;
                 this.parent.builder.addNode(
@@ -40,11 +40,11 @@ export class Toolbar
                 );
             });
 
-            this.makeButton("img/minus.png", "Output", () =>
+            this.makeButton("minus", "Output", () =>
             {
                 this.parent.builder.removeLastOutputNode();
             });
-            this.makeButton("img/plus.png", "Output", () =>
+            this.makeButton("plus", "Output", () =>
             {
                 let outputNo : number = this.parent.builder.circuit.numOutputs + 1;
                 this.parent.builder.addNode(
@@ -54,29 +54,29 @@ export class Toolbar
             });
         }
 
-        this.makeButton("img/save.png", "Save", () =>
+        this.makeButton("save", "Save", () =>
         {
             this.parent.builder.save();
         });
 
-        this.makeButton("img/info.png", "Info", () =>
+        this.makeButton("info", "Info", () =>
         {
             this.parent.builder.gateInfoWidget.show();
         });
 
-        this.makeButton("img/truthtable.png", "TrthTbl", () =>
+        this.makeButton("table", "TrthTbl", () =>
         {
             this.parent.builder.truthTableWidget.show();
         });
     }
 
-    public makeButton(imgSrc, text, onclick) : void
+    public makeButton(icon, text, onclick) : void
     {
         let c = document.createElement("div");
         c.className = "toolbar-button";
         
-        let i = document.createElement("img");
-        i.src = imgSrc;
+        let i = document.createElement("i");
+        i.className = "fas fa-" + icon;
         c.appendChild(i);
 
         let l = document.createElement("div");

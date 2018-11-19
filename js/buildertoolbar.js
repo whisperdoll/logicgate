@@ -9,45 +9,45 @@ define(["require", "exports"], function (require, exports) {
             this.container.className = "toolbar";
             this.parent = parent;
             parent.container.appendChild(this.container);
-            this.makeButton("img/back.png", "Back", function () {
+            this.makeButton("arrow-left", "Back", function () {
                 _this.parent.builder.exit();
             });
             if (!sandbox) {
-                this.makeButton("img/play.png", "Test", function () {
+                this.makeButton("play", "Test", function () {
                     _this.parent.builder.test();
                 });
             }
             else {
-                this.makeButton("img/minus.png", "Input", function () {
+                this.makeButton("minus", "Input", function () {
                     _this.parent.builder.removeLastInputNode();
                 });
-                this.makeButton("img/plus.png", "Input", function () {
+                this.makeButton("plus", "Input", function () {
                     var inputNo = _this.parent.builder.circuit.numInputs + 1;
                     _this.parent.builder.addNode("input" + inputNo.toString(), true);
                 });
-                this.makeButton("img/minus.png", "Output", function () {
+                this.makeButton("minus", "Output", function () {
                     _this.parent.builder.removeLastOutputNode();
                 });
-                this.makeButton("img/plus.png", "Output", function () {
+                this.makeButton("plus", "Output", function () {
                     var outputNo = _this.parent.builder.circuit.numOutputs + 1;
                     _this.parent.builder.addNode("output" + outputNo.toString(), false);
                 });
             }
-            this.makeButton("img/save.png", "Save", function () {
+            this.makeButton("save", "Save", function () {
                 _this.parent.builder.save();
             });
-            this.makeButton("img/info.png", "Info", function () {
+            this.makeButton("info", "Info", function () {
                 _this.parent.builder.gateInfoWidget.show();
             });
-            this.makeButton("img/truthtable.png", "TrthTbl", function () {
+            this.makeButton("table", "TrthTbl", function () {
                 _this.parent.builder.truthTableWidget.show();
             });
         }
-        Toolbar.prototype.makeButton = function (imgSrc, text, onclick) {
+        Toolbar.prototype.makeButton = function (icon, text, onclick) {
             var c = document.createElement("div");
             c.className = "toolbar-button";
-            var i = document.createElement("img");
-            i.src = imgSrc;
+            var i = document.createElement("i");
+            i.className = "fas fa-" + icon;
             c.appendChild(i);
             var l = document.createElement("div");
             l.innerText = text;
