@@ -83,7 +83,7 @@ export class Builder
 
     public exit(force : boolean = false)
     {
-        if (!this.saved && !force)
+        if (!this.saved && !force && this.circuit.type !== "sandbox")
         {
             this.saveWidget.show();
         }

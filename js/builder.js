@@ -34,7 +34,7 @@ define(["require", "exports", "./canvas", "./ionode", "./ui", "./challenges", ".
         }
         Builder.prototype.exit = function (force) {
             if (force === void 0) { force = false; }
-            if (!this.saved && !force) {
+            if (!this.saved && !force && this.circuit.type !== "sandbox") {
                 this.saveWidget.show();
             }
             else {
