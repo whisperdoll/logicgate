@@ -18,6 +18,8 @@ export class Toolbar
         if (!sandbox)
         {
             this.makeButton("play", "Test", this.buttonPress_play);
+            this.makeButton("info", "Info", this.buttonPress_info);
+            this.makeButton("save", "Save", this.buttonPress_save);
         }
         else
         {
@@ -27,8 +29,6 @@ export class Toolbar
             this.makeButton("plus", "Output", this.buttonPress_addOutput);
         }
 
-        this.makeButton("save", "Save", this.buttonPress_save);
-        this.makeButton("info", "Info", this.buttonPress_info);
         this.makeButton("table", "TrthTbl", this.buttonPress_truthTable);
     }
 

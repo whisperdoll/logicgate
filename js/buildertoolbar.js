@@ -11,6 +11,8 @@ define(["require", "exports"], function (require, exports) {
             this.makeButton("arrow-left", "Back", this.buttonPress_exit);
             if (!sandbox) {
                 this.makeButton("play", "Test", this.buttonPress_play);
+                this.makeButton("info", "Info", this.buttonPress_info);
+                this.makeButton("save", "Save", this.buttonPress_save);
             }
             else {
                 this.makeButton("minus", "Input", this.buttonPress_removeInput);
@@ -18,8 +20,6 @@ define(["require", "exports"], function (require, exports) {
                 this.makeButton("minus", "Output", this.buttonPress_removeOutput);
                 this.makeButton("plus", "Output", this.buttonPress_addOutput);
             }
-            this.makeButton("save", "Save", this.buttonPress_save);
-            this.makeButton("info", "Info", this.buttonPress_info);
             this.makeButton("table", "TrthTbl", this.buttonPress_truthTable);
         }
         Toolbar.prototype.makeButton = function (icon, text, onclick) {
